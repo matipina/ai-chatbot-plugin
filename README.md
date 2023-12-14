@@ -16,3 +16,9 @@ Como hacer brunches
 
 Checkear status de update del repositorio
 1. git status
+
+Borrar cagas
+1. git rm
+
+Cambiar de brunch
+1. git checkout brunch
