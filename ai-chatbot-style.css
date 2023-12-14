@@ -1,0 +1,16 @@
+#ai-chatbot-form {
+    margin: 20px 0;
+}
+
+#ai-chatbot-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+#ai-chatbot-response {
+    background-color: #f1f1f1;
+    padding: 15px;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+}
