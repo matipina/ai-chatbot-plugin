@@ -67,11 +67,13 @@ function ai_chatbot_shortcode() {
     ob_start();
     ?>
     <div id="ai-chatbot">
+        <div id="ai-chatbot-conversation" class="ai-chatbot-conversation">
+            <!-- Messages will be dynamically inserted here -->
+        </div>
         <form id="ai-chatbot-form">
             <input type="text" id="ai-chatbot-input" placeholder="Type your message here...">
             <input type="submit" id="ai-chatbot-submit" value="Send">
         </form>
-        <div id="ai-chatbot-response"></div>
     </div>
     <?php
     return ob_get_clean();

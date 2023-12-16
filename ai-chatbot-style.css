@@ -1,15 +1,66 @@
-#ai-chatbot-form {
-    margin: 20px 0;
+/* Style for the chatbot container */
+#ai-chatbot {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 300px;
+    background-color: white;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    z-index: 1000;
+    padding: 15px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
-#ai-chatbot-input {
-    width: 100%;
+/* Style for the chat conversation area */
+#ai-chatbot-conversation {
     padding: 10px;
-    margin-bottom: 10px;
+    height: 300px; /* Adjust height as needed */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Generic style for chat messages */
+.ai-chatbot-message {
+    padding: 10px;
+    border-radius: 15px;
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* Style for user messages */
+.user-message {
+    background-color: #daf8cb;
+    align-self: flex-end;
+    margin-left: 30%;
+}
+
+/* Style for bot messages */
+.bot-message {
+    background-color: #f1f1f1;
+    align-self: flex-start;
+    margin-right: 30%;
+}
+
+/* Style for the chat input form */
+#ai-chatbot-form {
+    margin-top: auto;
+}
+
+/* Style for the chat input field */
+#ai-chatbot-input {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin: 5px 0;
     border: 1px solid #ddd;
     border-radius: 4px;
 }
 
+/* Style for the send button */
 #ai-chatbot-submit {
     background-color: #4CAF50;
     color: white;
@@ -21,12 +72,4 @@
 
 #ai-chatbot-submit:hover {
     background-color: #45a049;
-}
-
-#ai-chatbot-response {
-    background-color: #f1f1f1;
-    padding: 15px;
-    border: 1px solid #ddd;
-    margin-top: 10px;
-    border-radius: 4px;
 }
