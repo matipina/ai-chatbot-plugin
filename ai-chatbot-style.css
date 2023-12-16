@@ -26,6 +26,7 @@
 
 /* Generic style for chat messages */
 .ai-chatbot-message {
+    font-size: 12px;
     padding: 10px;
     border-radius: 15px;
     max-width: 70%;

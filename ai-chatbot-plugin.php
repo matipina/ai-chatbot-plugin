@@ -6,6 +6,19 @@
  * Author: Your Name
  */
 
+$ai_chatbot_questions = array(
+    "Describe your products or services in depth.",
+    "What is your business's unique selling point?",
+    "What are your most frequently asked questions?",
+    "Can you describe your target audience?",
+    "What are your business hours and location?",
+    "What payment methods do you accept?",
+    "Are there any ongoing promotions or discounts?",
+    "How does your shipping and return process work?",
+    "What guarantees or warranties do you offer?",
+    "How can customers contact you for support?"
+);
+
 function ai_chatbot_plugin_test_function() {
     echo '<div id="message" class="updated fade"><p>AI Chatbot Plugin is activated!</p></div>';
 }
@@ -25,23 +38,27 @@ function ai_chatbot_enqueue_scripts() {
 add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
 
 function ai_chatbot_handle_request() {
-    $custom_prompt = get_option('ai_chatbot_prompt', '');
+    global $ai_chatbot_questions;
+
+    $custom_info = "";
+    for ($i = 1; $i <= count($ai_chatbot_questions); $i++) {
+        $answer = get_option('ai_chatbot_question_' . $i, '');
+        if (!empty($answer)) {
+            $custom_info .= $ai_chatbot_questions[$i - 1] . " " . $answer . " ";
+        }
+    }
+
     $user_message = isset($_POST['message']) ? sanitize_text_field($_POST['message']) : '';
-    $prompt = $custom_prompt . ' ' . $user_message;
+    $prompt = "As a professional customer representative for a business with the following information: " . $custom_info . "Answer the user's question: " . $user_message;
 
-    // OpenAI API URL
     $openai_url = 'https://api.openai.com/v1/engines/text-davinci-003/completions';
-
-    // OpenAI API Key
     $openai_api_key = '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';
 
-    // Data for the API request
     $data = array(
         'prompt' => $prompt,
         'max_tokens' => 150
     );
 
-    // API request to OpenAI
     $response = wp_remote_post($openai_url, array(
         'headers' => array(
             'Content-Type' => 'application/json',
@@ -103,7 +120,7 @@ function ai_chatbot_settings_page() {
 }
 
 function ai_chatbot_settings_init() {
-    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_prompt');
+    global $ai_chatbot_questions;
 
     add_settings_section(
         'ai_chatbot_plugin_settings_section', 
@@ -112,24 +129,29 @@ function ai_chatbot_settings_init() {
         'ai_chatbot_plugin_settings'
     );
 
-    add_settings_field( 
-        'ai_chatbot_prompt', 
-        __( 'AI ChatBot Prompt', 'wordpress' ), 
-        'ai_chatbot_prompt_render', 
-        'ai_chatbot_plugin_settings', 
-        'ai_chatbot_plugin_settings_section' 
-    );
+    foreach ($ai_chatbot_questions as $index => $question) {
+        register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_question_' . ($index + 1));
+        add_settings_field( 
+            'ai_chatbot_question_' . ($index + 1), 
+            __( 'Question ' . ($index + 1), 'wordpress' ), 
+            'ai_chatbot_question_render', 
+            'ai_chatbot_plugin_settings', 
+            'ai_chatbot_plugin_settings_section', 
+            array('question_number' => ($index + 1), 'question_text' => $question)
+        );
+    }
 }
 
-function ai_chatbot_prompt_render() {
-    $options = get_option('ai_chatbot_prompt');
+function ai_chatbot_question_render($args) {
+    $options = get_option('ai_chatbot_question_' . $args['question_number']);
     ?>
-    <textarea cols='40' rows='5' name='ai_chatbot_prompt'><?php echo esc_textarea($options); ?></textarea>
+    <label for='ai_chatbot_question_<?php echo $args['question_number']; ?>'><?php echo esc_html($args['question_text']); ?></label>
+    <textarea cols='40' rows='5' id='ai_chatbot_question_<?php echo $args['question_number']; ?>' name='ai_chatbot_question_<?php echo $args['question_number']; ?>'><?php echo esc_textarea($options); ?></textarea>
     <?php
 }
 
 function ai_chatbot_settings_section_callback() {
-    echo __( 'Set your custom prompt for the AI ChatBot.', 'wordpress' );
+    echo __( 'Answer the following questions to customize your AI ChatBot.', 'wordpress' );
 }
 
 add_action('admin_menu', 'ai_chatbot_add_admin_menu');
