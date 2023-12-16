@@ -25,17 +25,19 @@ function ai_chatbot_enqueue_scripts() {
 add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
 
 function ai_chatbot_handle_request() {
-    $message = isset($_POST['message']) ? sanitize_text_field($_POST['message']) : '';
+    $custom_prompt = get_option('ai_chatbot_prompt', '');
+    $user_message = isset($_POST['message']) ? sanitize_text_field($_POST['message']) : '';
+    $prompt = $custom_prompt . ' ' . $user_message;
 
     // OpenAI API URL
     $openai_url = 'https://api.openai.com/v1/engines/text-davinci-003/completions';
 
-    // Replace 'Your_OpenAI_API_Key' with your actual OpenAI API Key
+    // OpenAI API Key
     $openai_api_key = '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';
 
     // Data for the API request
     $data = array(
-        'prompt' => $message,
+        'prompt' => $prompt,
         'max_tokens' => 150
     );
 
@@ -80,4 +82,55 @@ function ai_chatbot_shortcode() {
 }
 
 add_shortcode('ai_chatbot', 'ai_chatbot_shortcode');
-?>
+
+function ai_chatbot_add_admin_menu() {
+    add_menu_page('AI ChatBot Settings', 'AI ChatBot', 'manage_options', 'ai_chatbot', 'ai_chatbot_settings_page');
+}
+
+function ai_chatbot_settings_page() {
+    ?>
+    <div class="wrap">
+    <h1>AI ChatBot Settings</h1>
+    <form method="post" action="options.php">
+        <?php
+        settings_fields('ai_chatbot_plugin_settings');
+        do_settings_sections('ai_chatbot_plugin_settings');
+        submit_button();
+        ?>
+    </form>
+    </div>
+    <?php
+}
+
+function ai_chatbot_settings_init() {
+    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_prompt');
+
+    add_settings_section(
+        'ai_chatbot_plugin_settings_section', 
+        __( 'Customize your AI ChatBot', 'wordpress' ), 
+        'ai_chatbot_settings_section_callback', 
+        'ai_chatbot_plugin_settings'
+    );
+
+    add_settings_field( 
+        'ai_chatbot_prompt', 
+        __( 'AI ChatBot Prompt', 'wordpress' ), 
+        'ai_chatbot_prompt_render', 
+        'ai_chatbot_plugin_settings', 
+        'ai_chatbot_plugin_settings_section' 
+    );
+}
+
+function ai_chatbot_prompt_render() {
+    $options = get_option('ai_chatbot_prompt');
+    ?>
+    <textarea cols='40' rows='5' name='ai_chatbot_prompt'><?php echo esc_textarea($options); ?></textarea>
+    <?php
+}
+
+function ai_chatbot_settings_section_callback() {
+    echo __( 'Set your custom prompt for the AI ChatBot.', 'wordpress' );
+}
+
+add_action('admin_menu', 'ai_chatbot_add_admin_menu');
+add_action('admin_init', 'ai_chatbot_settings_init');
