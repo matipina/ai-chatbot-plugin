@@ -1,72 +1,81 @@
 <?php
-/*
-Plugin Name: AI ChatBot Plugin
-Plugin URI: http://yourwebsite.com/
-Description: A plugin for integrating AI ChatBot into WordPress.
-Version: 1.0
-Author: Tiago Aragona
-Author URI: http://yourwebsite.com/
-*/
+/**
+ * Plugin Name: AI Chatbot
+ * Description: A WordPress plugin for integrating an AI Chatbot using OpenAI's API.
+ * Version: 1.0.0
+ * Author: Your Name
+ */
 
-// Test function to confirm the plugin is activated
 function ai_chatbot_plugin_test_function() {
-    echo 'AI ChatBot Plugin is activated and working!';
-}
-add_action('admin_notices', 'ai_chatbot_plugin_test_function');
-
-// Shortcode function to display the chat interface
-function ai_chatbot_shortcode() {
-    $content = '';
-    $content .= '<form id="ai-chatbot-form">';
-    $content .= '<textarea id="ai-chatbot-input" name="ai-chatbot-input"></textarea>';
-    $content .= '<input type="submit" value="Ask">';
-    $content .= '</form>';
-    $content .= '<div id="ai-chatbot-response"></div>';
-    return $content;
+    echo '<div id="message" class="updated fade"><p>AI Chatbot Plugin is activated!</p></div>';
 }
 
-add_shortcode('ai_chatbot', 'ai_chatbot_shortcode');
+register_activation_hook(__FILE__, 'ai_chatbot_plugin_test_function');
 
-// Function to enqueue scripts and styles
 function ai_chatbot_enqueue_scripts() {
-    wp_enqueue_script('ai-chatbot-script', plugins_url('ai-chatbot.js', __FILE__), array(), '1.0.0', true);
-    wp_localize_script('ai-chatbot-script', 'ajax_object', array('ajaxurl' => admin_url('admin-ajax.php')));
-    wp_enqueue_style('ai-chatbot-style', plugins_url('ai-chatbot-style.css', __FILE__));
+    wp_enqueue_script('ai-chatbot-js', plugins_url('/ai-chatbot.js', __FILE__), array('jquery'), '1.0.0', true);
+    wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
+
+    $translation_array = array(
+        'ajaxurl' => admin_url('admin-ajax.php')
+    );
+    wp_localize_script('ai-chatbot-js', 'aiChatbot', $translation_array);
 }
+
 add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
 
-// AJAX handlers for logged-in and logged-out users
-add_action('wp_ajax_ai_chatbot_response', 'ai_chatbot_handle_request');
-add_action('wp_ajax_nopriv_ai_chatbot_response', 'ai_chatbot_handle_request');
-
 function ai_chatbot_handle_request() {
-    error_log('Received AJAX request');
-    // Get the message from the AJAX request
-    $message = sanitize_text_field($_POST['message']);
+    $message = isset($_POST['message']) ? sanitize_text_field($_POST['message']) : '';
 
-    // Your OpenAI API key
-    $openai_api_key = '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';
+    // OpenAI API URL
+    $openai_url = 'https://api.openai.com/v1/engines/text-davinci-003/completions';
 
-    // Set up the request to OpenAI
-    $response = wp_remote_post('https://api.openai.com/v1/engines/davinci/completions', array(
+    // Replace 'Your_OpenAI_API_Key' with your actual OpenAI API Key
+    $openai_api_key = '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';
+
+    // Data for the API request
+    $data = array(
+        'prompt' => $message,
+        'max_tokens' => 150
+    );
+
+    // API request to OpenAI
+    $response = wp_remote_post($openai_url, array(
         'headers' => array(
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $openai_api_key
         ),
-        'body' => json_encode(array(
-            'prompt' => $message,
-            'max_tokens' => 150
-        ))
+        'body' => json_encode($data),
+        'method' => 'POST',
+        'data_format' => 'body',
     ));
 
     if (is_wp_error($response)) {
-        wp_send_json_error(array('response' => 'Error communicating with OpenAI'));
-        return;
+        wp_send_json_error(array('error' => 'Failed to connect to OpenAI API'));
     }
 
     $body = json_decode(wp_remote_retrieve_body($response), true);
-    $ai_response = $body['choices'][0]['text'];
 
-    // Send a JSON response back
-    wp_send_json_success(array('response' => $ai_response));
+    wp_send_json_success(array('response' => $body['choices'][0]['text']));
+    wp_die();
 }
+
+add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
+add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
+
+function ai_chatbot_shortcode() {
+    ob_start();
+    ?>
+    <div id="ai-chatbot">
+        <form id="ai-chatbot-form">
+            <input type="text" id="ai-chatbot-input" placeholder="Type your message here...">
+            <input type="submit" id="ai-chatbot-submit" value="Send">
+        </form>
+        <div id="ai-chatbot-response"></div>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
+add_shortcode('ai_chatbot', 'ai_chatbot_shortcode');
+?>
