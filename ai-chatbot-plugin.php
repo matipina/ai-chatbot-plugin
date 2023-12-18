@@ -8,22 +8,17 @@
 
 session_start();
 
-// Initialize conversation history if not already set
 if (!isset($_SESSION['chat_history'])) {
     $_SESSION['chat_history'] = array();
 }
 
-// Update chat history
 function update_chat_history($user_message, $bot_message) {
     $_SESSION['chat_history'][] = array("user" => $user_message, "bot" => $bot_message);
-
-    // Truncate history if it gets too long
     if (count($_SESSION['chat_history']) > 10) {
         array_shift($_SESSION['chat_history']);
     }
 }
 
-// Generate AI prompt with conversation history
 function generate_ai_prompt($new_user_input, $custom_info) {
     $history = "";
     foreach ($_SESSION['chat_history'] as $message_pair) {
@@ -34,7 +29,6 @@ function generate_ai_prompt($new_user_input, $custom_info) {
     return $instruction . $custom_info . "\n\n" . $history . "User: " . $new_user_input . "\nBot:";
 }
 
-// Array of your custom questions
 $ai_chatbot_questions = array(
     "Describe your products or services in depth.",
     "What is your business's unique selling point?",
@@ -46,19 +40,22 @@ $ai_chatbot_questions = array(
     "How does your shipping and return process work?",
     "What guarantees or warranties do you offer?",
     "How can customers contact you for support?"
-    // Add more questions as needed
 );
 
 function ai_chatbot_enqueue_scripts() {
     wp_enqueue_script('ai-chatbot-js', plugins_url('/ai-chatbot.js', __FILE__), array('jquery'), '1.0.0', true);
     wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
-    $translation_array = array('ajaxurl' => admin_url('admin-ajax.php'));
-    wp_localize_script('ai-chatbot-js', 'aiChatbot', $translation_array);
+    wp_localize_script('ai-chatbot-js', 'aiChatbot', array('ajaxurl' => admin_url('admin-ajax.php')));
 }
 
 add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
 
 function ai_chatbot_handle_request() {
+    if (get_option('ai_chatbot_enabled') != '1') {
+        wp_send_json_error(array('error' => 'AI ChatBot is disabled'));
+        return;
+    }
+
     global $ai_chatbot_questions;
     $custom_info = "";
     foreach ($ai_chatbot_questions as $index => $question) {
@@ -69,12 +66,14 @@ function ai_chatbot_handle_request() {
     }
 
     $user_message = isset($_POST['message']) ? sanitize_text_field($_POST['message']) : '';
+    $openai_api_key = get_option('ai_chatbot_openai_api_key');
+    if (!$openai_api_key) {
+        wp_send_json_error(array('error' => 'OpenAI API Key is missing'));
+        return;
+    }
 
     $prompt = generate_ai_prompt($user_message, $custom_info);
     $openai_url = 'https://api.openai.com/v1/engines/text-davinci-003/completions';
-
-    // Replace 'YOUR_OPENAI_API_KEY' with your actual OpenAI API key
-    $openai_api_key = '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';
 
     $data = array('prompt' => $prompt, 'max_tokens' => 150);
     $response = wp_remote_post($openai_url, array(
@@ -89,12 +88,12 @@ function ai_chatbot_handle_request() {
 
     if (is_wp_error($response)) {
         wp_send_json_error(array('error' => 'Failed to connect to OpenAI API'));
+        return;
     }
 
     $body = json_decode(wp_remote_retrieve_body($response), true);
     $bot_response = $body['choices'][0]['text'];
 
-    // Update conversation history
     update_chat_history($user_message, $bot_response);
 
     wp_send_json_success(array('response' => $bot_response));
@@ -103,8 +102,11 @@ function ai_chatbot_handle_request() {
 add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 
-// Shortcode for displaying the chatbot interface
 function ai_chatbot_shortcode() {
+    if (get_option('ai_chatbot_enabled') != '1') {
+        return ''; // Return nothing if the chatbot is disabled
+    }
+
     ob_start();
     ?>
     <div id="ai-chatbot">
@@ -122,10 +124,11 @@ function ai_chatbot_shortcode() {
 
 add_shortcode('ai_chatbot', 'ai_chatbot_shortcode');
 
-// Admin menu for the chatbot settings
 function ai_chatbot_add_admin_menu() {
     add_menu_page('AI ChatBot Settings', 'AI ChatBot', 'manage_options', 'ai_chatbot', 'ai_chatbot_settings_page');
 }
+
+add_action('admin_menu', 'ai_chatbot_add_admin_menu');
 
 function ai_chatbot_settings_page() {
     ?>
@@ -143,7 +146,9 @@ function ai_chatbot_settings_page() {
 }
 
 function ai_chatbot_settings_init() {
-    global $ai_chatbot_questions;
+    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_enabled');
+    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_openai_api_key');
+
     add_settings_section(
         'ai_chatbot_plugin_settings_section',
         __('Customize your AI ChatBot', 'wordpress'),
@@ -151,11 +156,28 @@ function ai_chatbot_settings_init() {
         'ai_chatbot_plugin_settings'
     );
 
+    add_settings_field(
+        'ai_chatbot_enabled',
+        __('Enable AI ChatBot', 'wordpress'),
+        'ai_chatbot_enabled_render',
+        'ai_chatbot_plugin_settings',
+        'ai_chatbot_plugin_settings_section'
+    );
+
+    add_settings_field(
+        'ai_chatbot_openai_api_key',
+        __('OpenAI API Key', 'wordpress'),
+        'ai_chatbot_openai_api_key_render',
+        'ai_chatbot_plugin_settings',
+        'ai_chatbot_plugin_settings_section'
+    );
+
+    global $ai_chatbot_questions;
     foreach ($ai_chatbot_questions as $index => $question) {
         register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_question_' . ($index + 1));
         add_settings_field(
             'ai_chatbot_question_' . ($index + 1),
-            '', // The title is set to empty to prevent redundancy
+            '', // Leave the title empty to prevent duplication
             'ai_chatbot_question_render',
             'ai_chatbot_plugin_settings',
             'ai_chatbot_plugin_settings_section',
@@ -168,20 +190,35 @@ function ai_chatbot_settings_init() {
     }
 }
 
+add_action('admin_init', 'ai_chatbot_settings_init');
+
+function ai_chatbot_enabled_render() {
+    $options = get_option('ai_chatbot_enabled');
+    ?>
+    <input type='checkbox' name='ai_chatbot_enabled' <?php checked($options, 1); ?> value='1'>
+    <?php
+}
+
+function ai_chatbot_openai_api_key_render() {
+    $options = get_option('ai_chatbot_openai_api_key');
+    ?>
+    <input type='text' name='ai_chatbot_openai_api_key' value='<?php echo esc_attr($options); ?>' size='50'>
+    <?php
+}
+
 function ai_chatbot_question_render($args) {
     $options = get_option($args['label_for']);
     ?>
     <div class="ai-chatbot-question">
+        <p><strong>Question <?php echo esc_html($args['index']); ?>:</strong></p>
         <p><?php echo esc_html($args['question_text']); ?></p>
         <textarea cols="40" rows="5" id="<?php echo esc_attr($args['label_for']); ?>" name="<?php echo esc_attr($args['label_for']); ?>"><?php echo esc_textarea($options); ?></textarea>
     </div>
     <?php
 }
 
+
 function ai_chatbot_settings_section_callback() {
     echo __('Answer the following questions to customize your AI ChatBot.', 'wordpress');
 }
-
-add_action('admin_menu', 'ai_chatbot_add_admin_menu');
-add_action('admin_init', 'ai_chatbot_settings_init');
 ?>
