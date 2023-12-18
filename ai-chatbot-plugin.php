@@ -110,6 +110,16 @@ function ai_chatbot_shortcode() {
     ob_start();
     ?>
     <div id="ai-chatbot">
+    <div class="chatbot-header">
+    <div class="chatbot-image-placeholder"></div>
+    <div>
+        <span class="chatbot-name">AIBuddy</span>
+        <span class="chatbot-status">
+            <span class="chatbot-status-dot"></span>
+            <span class="chatbot-status-text">Online Now</span>
+        </span>
+    </div>
+</div>
         <div id="ai-chatbot-conversation" class="ai-chatbot-conversation">
             <!-- Messages will be dynamically inserted here -->
         </div>

@@ -81,7 +81,7 @@
 
 /* Style for user messages */
 .user-message {
-    background-color: #daf8cb;
+    background-color: rgba(0, 24, 249, 0.1);
     align-self: flex-end;
     margin-left: 30%;
 }
@@ -109,7 +109,7 @@
 
 /* Style for the send button */
 #ai-chatbot-submit {
-    background-color: #4CAF50;
+    background-color: #0018F9; /* Updated color */
     color: white;
     padding: 10px 15px;
     border: none;
@@ -118,7 +118,32 @@
 }
 
 #ai-chatbot-submit:hover {
-    background-color: #45a049;
+    background-color: #0000cc; /* Darker shade for hover */
+}
+
+/* New Styles for Chatbot Header */
+.chatbot-header {
+    background-color: #0018F9; /* Blue background */
+    color: white;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    border-top-left-radius: 10px; /* Match container's border-radius */
+    border-top-right-radius: 10px; /* Match container's border-radius */
+}
+
+.chatbot-image-placeholder {
+    background-color: white;
+    width: 40px; /* Adjust as needed */
+    height: 40px; /* Adjust as needed */
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.chatbot-name {
+    font-size: 18px; /* Adjust as needed */
+    font-weight: bold;
 }
 
 .ai-chatbot-question {
@@ -135,4 +160,24 @@
 .ai-chatbot-question textarea {
     width: 100%; /* Full width of the container */
     box-sizing: border-box; /* Padding and border included in width and height */
+}
+
+.chatbot-status {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+}
+
+.chatbot-status-dot {
+    height: 5px;
+    width: 5px;
+    background-color: #2DFF54;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.chatbot-status-text {
+    color: white;
+    opacity: 0.5; /* Apply opacity only to the text */
 }
