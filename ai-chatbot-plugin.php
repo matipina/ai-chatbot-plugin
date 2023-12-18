@@ -73,7 +73,8 @@ function ai_chatbot_handle_request() {
     $prompt = generate_ai_prompt($user_message, $custom_info);
     $openai_url = 'https://api.openai.com/v1/engines/text-davinci-003/completions';
 
-    $openai_api_key = ' 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'; // Replace with your OpenAI API key
+    // Replace 'YOUR_OPENAI_API_KEY' with your actual OpenAI API key
+    $openai_api_key = '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';
 
     $data = array('prompt' => $prompt, 'max_tokens' => 150);
     $response = wp_remote_post($openai_url, array(
@@ -154,11 +155,15 @@ function ai_chatbot_settings_init() {
         register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_question_' . ($index + 1));
         add_settings_field(
             'ai_chatbot_question_' . ($index + 1),
-            __('Question ' . ($index + 1), 'wordpress'),
+            '', // The title is set to empty to prevent redundancy
             'ai_chatbot_question_render',
             'ai_chatbot_plugin_settings',
             'ai_chatbot_plugin_settings_section',
-            array('label_for' => 'ai_chatbot_question_' . ($index + 1), 'question_text' => $question)
+            array(
+                'label_for' => 'ai_chatbot_question_' . ($index + 1),
+                'question_text' => $question,
+                'index' => $index + 1
+            )
         );
     }
 }
@@ -166,8 +171,10 @@ function ai_chatbot_settings_init() {
 function ai_chatbot_question_render($args) {
     $options = get_option($args['label_for']);
     ?>
-    <label for="<?php echo esc_attr($args['label_for']); ?>"><?php echo esc_html($args['question_text']); ?></label>
-    <textarea cols="40" rows="5" id="<?php echo esc_attr($args['label_for']); ?>" name="<?php echo esc_attr($args['label_for']); ?>"><?php echo esc_textarea($options); ?></textarea>
+    <div class="ai-chatbot-question">
+        <p><?php echo esc_html($args['question_text']); ?></p>
+        <textarea cols="40" rows="5" id="<?php echo esc_attr($args['label_for']); ?>" name="<?php echo esc_attr($args['label_for']); ?>"><?php echo esc_textarea($options); ?></textarea>
+    </div>
     <?php
 }
 
