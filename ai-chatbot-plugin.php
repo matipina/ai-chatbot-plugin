@@ -25,7 +25,7 @@ function generate_ai_prompt($new_user_input, $custom_info) {
         $history .= "User: " . $message_pair['user'] . "\nBot: " . $message_pair['bot'] . "\n";
     }
 
-    $instruction = "Using the information provided and past conversation history, answer the user's question accurately. Do not make up information or speculate. If the information is not available, respond with 'I don't have that information.' Information: ";
+    $instruction = "Using the information provided and past conversation history, answer the user's question accurately. Do not make up information or speculate. If the information is not available, respond with 'I don't have that information. For example, if a person asks you for the price of a good or service that was not clearly stated in the information then answer 'I am sorry, I do not have that information. Can I help you with something else?' If some asks for the payment methods and you dont have that info in the information you answer that you dont have it. The same if they ask for features of a specific product. The same if they ask for products that you don't regonize in the information set. ' This is the set of information you have to always reference to: ";
     return $instruction . $custom_info . "\n\n" . $history . "User: " . $new_user_input . "\nBot:";
 }
 
