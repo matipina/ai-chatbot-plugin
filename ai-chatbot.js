@@ -1,35 +1,48 @@
-document.addEventListener('DOMContentLoaded', function() {
-    var form = document.getElementById('ai-chatbot-form');
-    document.addEventListener('DOMContentLoaded', function() {
-        var form = document.getElementById('ai-chatbot-form');
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            var input = document.getElementById('ai-chatbot-input').value;
-    
-            console.log("Sending message to server:", input); // Debugging line
-    
-            var data = {
-                'action': 'ai_chatbot_response',
-                'message': input
-            };
-    
-            fetch(ajax_object.ajaxurl, {
+document.addEventListener('DOMContentLoaded', function () {
+    const chatForm = document.getElementById('ai-chatbot-form');
+    const chatInput = document.getElementById('ai-chatbot-input');
+    const chatConversation = document.getElementById('ai-chatbot-conversation');
+
+    function appendMessage(text, className) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'ai-chatbot-message ' + className;
+        messageElement.textContent = text;
+        chatConversation.appendChild(messageElement);
+        chatConversation.scrollTop = chatConversation.scrollHeight; // Scroll to the latest message
+    }
+
+    chatForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const message = chatInput.value.trim();
+
+        if (message) {
+            appendMessage(message, 'user-message'); // Append user message
+
+            fetch(aiChatbot.ajaxurl, {
                 method: 'POST',
-                credentials: 'same-origin',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
                 },
-                body: new URLSearchParams(data).toString()
+                body: 'action=ai_chatbot_handle_request&message=' + encodeURIComponent(message)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
-                console.log("Response received from server:", data); // Debugging line
-                document.getElementById('ai-chatbot-response').innerHTML = data.response;
+                if (data.success && data.data.response) {
+                    appendMessage(data.data.response, 'bot-message'); // Append bot response
+                } else {
+                    appendMessage('No response received', 'bot-message');
+                }
             })
             .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('ai-chatbot-response').innerHTML = 'An error occurred.';
+                appendMessage('Error: ' + error.message, 'bot-message');
             });
-        });
+
+            chatInput.value = ''; // Clear input field
+        }
     });
 });
