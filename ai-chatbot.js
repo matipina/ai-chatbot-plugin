@@ -2,7 +2,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const chatForm = document.getElementById('ai-chatbot-form');
     const chatInput = document.getElementById('ai-chatbot-input');
     const chatConversation = document.getElementById('ai-chatbot-conversation');
+    const chatbotContainer = document.getElementById('ai-chatbot');
+    const chatbotToggle = document.getElementById('chatbot-toggle');
+    const chatbotMinimized = document.getElementById('chatbot-minimized');
 
+    // Function to append messages to the chat conversation
     function appendMessage(text, className) {
         const messageElement = document.createElement('div');
         messageElement.className = 'ai-chatbot-message ' + className;
@@ -11,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
         chatConversation.scrollTop = chatConversation.scrollHeight; // Scroll to the latest message
     }
 
+    // Event listener for chat form submission
     chatForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const message = chatInput.value.trim();
@@ -44,5 +49,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             chatInput.value = ''; // Clear input field
         }
+    });
+
+    // Event listener to handle chatbot minimization
+    chatbotToggle.addEventListener('click', function() {
+        chatbotContainer.classList.add('minimized');
+        chatbotMinimized.style.display = 'block'; // Show the gray circle
+    });
+
+    // Event listener to handle chatbot expansion from the gray circle
+    chatbotMinimized.addEventListener('click', function() {
+        chatbotContainer.classList.remove('minimized');
+        chatbotMinimized.style.display = 'none'; // Hide the gray circle
     });
 });
