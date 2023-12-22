@@ -179,7 +179,8 @@ function ai_chatbot_handle_request()
  *
  * @return string Modified content with AI Chatbot integration.
  */
-function automatic_integration_callback($content) {
+function automatic_integration_callback($content)
+{
     // Check if the plugin is enabled
     $plugin_enabled = get_option('ai_chatbot_enabled');
 
@@ -188,6 +189,10 @@ function automatic_integration_callback($content) {
         ob_start();
         ?>
         <div id="ai-chatbot">
+            <!-- Gray Circle for Minimized State -->
+            <div id="chatbot-minimized" class="chatbot-minimized"></div>
+
+            <!-- Chatbot Header with Minimize/Expand Button -->
             <div class="chatbot-header">
                 <div class="chatbot-image-placeholder"></div>
                 <div>
@@ -197,10 +202,18 @@ function automatic_integration_callback($content) {
                         <span class="chatbot-status-text">Online Now</span>
                     </span>
                 </div>
+                <!-- Minimize/Expand Button with Font Awesome Icon -->
+                <button id="chatbot-toggle" class="chatbot-toggle">
+                    <i class="fas fa-times"></i> <!-- Font Awesome icon -->
+                </button>
             </div>
+
+            <!-- Chatbot Conversation Area -->
             <div id="ai-chatbot-conversation" class="ai-chatbot-conversation">
                 <!-- Messages will be dynamically inserted here -->
             </div>
+
+            <!-- Chatbot Input Form -->
             <form id="ai-chatbot-form">
                 <input type="text" id="ai-chatbot-input" placeholder="Type your message here...">
                 <input type="submit" id="ai-chatbot-submit" value="Send">
