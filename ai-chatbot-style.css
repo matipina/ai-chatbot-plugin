@@ -1,4 +1,8 @@
 /* General Styles for Plugin Settings Page */
+:root {
+    --chatbot-primary-color: #0018F9; /* Default primary color, can be overridden by JS */
+}
+
 .my-plugin-settings {
     font-family: Arial, sans-serif;
     padding: 20px;
@@ -31,7 +35,7 @@
 
 /* Styles for Submit Button */
 .my-plugin-settings input[type="submit"] {
-    background-color: #007cba;
+    background-color: var(--chatbot-primary-color);
     color: white;
     padding: 10px 20px;
     border: none;
@@ -81,7 +85,7 @@
 
 /* Style for user messages */
 .user-message {
-    background-color: rgba(0, 24, 249, 0.1);
+    background-color: var(--chatbot-primary-color);
     align-self: flex-end;
     margin-left: 30%;
 }
@@ -109,7 +113,7 @@
 
 /* Style for the send button */
 #ai-chatbot-submit {
-    background-color: #0018F9;
+    background-color: var(--chatbot-primary-color);
     color: white;
     padding: 10px 15px;
     border: none;
@@ -123,7 +127,7 @@
 
 /* New Styles for Chatbot Header */
 .chatbot-header {
-    background-color: #0018F9;
+    background-color: var(--chatbot-primary-color);
     color: white;
     padding: 10px;
     display: flex;
@@ -140,6 +144,9 @@
     border-radius: 50%;
     display: inline-block;
     margin-right: 10px;
+    background-image: url('https://pics.craiyon.com/2023-11-06/14d7c1db79a944eeab600fcf5eaba9c8.webp'); /* Replace with your image path */
+    background-size: cover; /* Ensures the image covers the entire area */
+    background-position: center; /* Centers the image */
 }
 
 .chatbot-name {
@@ -180,12 +187,14 @@
 
 /* Styles when the chatbot is minimized */
 #ai-chatbot.minimized {
-    width: 60px;
-    height: 60px;
+    width: 60px; /* Adjust the size as needed */
+    height: 60px; /* Adjust the size as needed */
     border-radius: 50%;
     padding: 0;
     overflow: hidden;
-    background-color: gray; /* Match the color of the circle */
+    background-image: url('path_to_your_image.jpg'); /* Replace with your image path */
+    background-size: cover; /* Ensures the image covers the entire area */
+    background-position: center; /* Centers the image */
 }
 
 #ai-chatbot.minimized .chatbot-header,
@@ -195,15 +204,17 @@
     display: none;
 }
 
-/* Style for the minimized chatbot (gray circle) */
+/* Style for the separate minimized chatbot icon (if used) */
 .chatbot-minimized {
-    width: 50px;
-    height: 50px;
-    background-color: gray;
+    width: 60px; /* Adjust the size as needed */
+    height: 60px; /* Adjust the size as needed */
+    background-image: url('https://pics.craiyon.com/2023-11-06/14d7c1db79a944eeab600fcf5eaba9c8.webp');
+    background-size: cover; /* Ensures the image covers the entire area */
+    background-position: 50% 50%; /* Centers the image */
     border-radius: 50%;
     cursor: pointer;
-    display: none; /* Hide the separate gray circle when minimized */
+    display: none; /* Hide the separate icon when minimized */
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 0px;
+    right: 0px;
 }

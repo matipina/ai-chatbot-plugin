@@ -77,6 +77,7 @@ function generate_ai_prompt($new_user_input, $custom_info)
  *
  * @return void
  */
+
 function ai_chatbot_enqueue_scripts()
 {
     // Enqueue the AI Chatbot JavaScript file with jQuery as a dependency
@@ -87,8 +88,20 @@ function ai_chatbot_enqueue_scripts()
 
     // Enqueue Font Awesome for chatbot toggle icon
     wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
-    // Localize the AI Chatbot JavaScript file to make 'ajaxurl' available
-    wp_localize_script('ai-chatbot-js', 'aiChatbot', array('ajaxurl' => admin_url('admin-ajax.php')));
+
+    // Combine and pass settings to the JavaScript file
+    $chatbot_settings = array(
+        'ajaxurl' => admin_url('admin-ajax.php'), // AJAX URL for WordPress
+        'image_url' => get_option('ai_chatbot_image_url') // Pass the image URL
+    );
+
+    $chatbot_settings = array(
+        'ajaxurl' => admin_url('admin-ajax.php'),
+        'image_url' => get_option('ai_chatbot_image_url'),
+        'primary_color' => get_option('ai_chatbot_primary_color', '#007bff') // Default blue color
+    );
+    
+    wp_localize_script('ai-chatbot-js', 'aiChatbotSettings', $chatbot_settings);
 }
 
 /**
@@ -256,6 +269,8 @@ function ai_chatbot_settings_init()
 {
     register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_enabled');
     register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_openai_api_key');
+    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_image_url');
+    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_primary_color');
 
     add_settings_section(
         'ai_chatbot_plugin_settings_section',
@@ -268,6 +283,22 @@ function ai_chatbot_settings_init()
         'ai_chatbot_enabled',
         __('Enable AI ChatBot', 'wordpress'),
         'ai_chatbot_enabled_render',
+        'ai_chatbot_plugin_settings',
+        'ai_chatbot_plugin_settings_section'
+    );
+
+    add_settings_field(
+        'ai_chatbot_primary_color',
+        __('Primary Color', 'wordpress'),
+        'ai_chatbot_primary_color_render',
+        'ai_chatbot_plugin_settings',
+        'ai_chatbot_plugin_settings_section'
+    );
+
+    add_settings_field(
+        'ai_chatbot_image_url',
+        __('Chatbot Image URL', 'wordpress'),
+        'ai_chatbot_image_url_render',
         'ai_chatbot_plugin_settings',
         'ai_chatbot_plugin_settings_section'
     );
@@ -336,6 +367,18 @@ function ai_chatbot_settings_section_callback()
     echo __('Answer the following questions to customize your AI ChatBot.', 'wordpress');
 }
 
+function ai_chatbot_image_url_render()
+{
+    $options = get_option('ai_chatbot_image_url');
+    ?>
+    <input type='text' name='ai_chatbot_image_url' value='<?php echo esc_attr($options); ?>' size='50'>
+    <?php
+}
+
+function ai_chatbot_primary_color_render() {
+    $color = get_option('ai_chatbot_primary_color', '#007bff'); // Default blue color
+    echo '<input type="color" name="ai_chatbot_primary_color" value="' . esc_attr($color) . '">';
+}
 
 session_start();
 

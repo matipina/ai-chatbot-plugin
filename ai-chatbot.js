@@ -1,10 +1,27 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Set chatbot image placeholder and minimized chatbot image if the URL is provided
+    const chatbotImagePlaceholder = document.querySelector('.chatbot-image-placeholder');
+    const chatbotMinimized = document.querySelector('.chatbot-minimized');
+
+    if (aiChatbotSettings.image_url) {
+        if (chatbotImagePlaceholder) {
+            chatbotImagePlaceholder.style.backgroundImage = `url('${aiChatbotSettings.image_url}')`;
+        }
+        if (chatbotMinimized) {
+            chatbotMinimized.style.backgroundImage = `url('${aiChatbotSettings.image_url}')`;
+        }
+    }
+
+    if (aiChatbotSettings.primary_color) {
+        const root = document.documentElement;
+        root.style.setProperty('--chatbot-primary-color', aiChatbotSettings.primary_color);
+    }
+
     const chatForm = document.getElementById('ai-chatbot-form');
     const chatInput = document.getElementById('ai-chatbot-input');
     const chatConversation = document.getElementById('ai-chatbot-conversation');
     const chatbotContainer = document.getElementById('ai-chatbot');
     const chatbotToggle = document.getElementById('chatbot-toggle');
-    const chatbotMinimized = document.getElementById('chatbot-minimized');
 
     // Function to append messages to the chat conversation
     function appendMessage(text, className) {
@@ -23,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (message) {
             appendMessage(message, 'user-message'); // Append user message
 
-            fetch(aiChatbot.ajaxurl, {
+            fetch(aiChatbotSettings.ajaxurl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
@@ -54,12 +71,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Event listener to handle chatbot minimization
     chatbotToggle.addEventListener('click', function() {
         chatbotContainer.classList.add('minimized');
-        chatbotMinimized.style.display = 'block'; // Show the gray circle
+        chatbotMinimized.style.display = 'block'; // Show the minimized icon
     });
 
-    // Event listener to handle chatbot expansion from the gray circle
+    // Event listener to handle chatbot expansion from the minimized state
     chatbotMinimized.addEventListener('click', function() {
         chatbotContainer.classList.remove('minimized');
-        chatbotMinimized.style.display = 'none'; // Hide the gray circle
+        chatbotMinimized.style.display = 'none'; // Hide the minimized icon
     });
 });
