@@ -166,49 +166,52 @@ function ai_chatbot_handle_request()
 }
 
 /**
- * Generate a custom button with specified attributes.
+ * Callback function for automatically integrating the AI Chatbot into post or page content.
  *
- * Shortcode Attributes:
- * - color: Background color of the button.
- * - text: Text content of the button.
+ * This function is hooked into the `the_content` filter. It checks if the AI Chatbot plugin
+ * is enabled, and if so, appends the chatbot content to the end of the post or page content.
  *
- * Example Usage: [custom_button color="red" text="Click Here"]
+ * @param string $content The original post or page content.
  *
- * @param array $atts Shortcode attributes.
- * @return string Generated HTML for the custom button.
+ * @return string Modified content with AI Chatbot integration.
  */
-function ai_chatbot_shortcode()
-{
-    error_log('shortcode is executing');
-    echo 'shortcode is executing';
-    if (get_option('ai_chatbot_enabled') != '1') {
-        return ''; // Return nothing if the chatbot is disabled
+function automatic_integration_callback($content) {
+    // Check if the plugin is enabled
+    $plugin_enabled = get_option('ai_chatbot_enabled');
+
+    if ($plugin_enabled == 1) {
+        // Start output buffering
+        ob_start();
+        ?>
+        <div id="ai-chatbot">
+            <div class="chatbot-header">
+                <div class="chatbot-image-placeholder"></div>
+                <div>
+                    <span class="chatbot-name">AIBuddy</span>
+                    <span class="chatbot-status">
+                        <span class="chatbot-status-dot"></span>
+                        <span class="chatbot-status-text">Online Now</span>
+                    </span>
+                </div>
+            </div>
+            <div id="ai-chatbot-conversation" class="ai-chatbot-conversation">
+                <!-- Messages will be dynamically inserted here -->
+            </div>
+            <form id="ai-chatbot-form">
+                <input type="text" id="ai-chatbot-input" placeholder="Type your message here...">
+                <input type="submit" id="ai-chatbot-submit" value="Send">
+            </form>
+        </div>
+        <?php
+
+        // Get the buffered content
+        $plugin_content = ob_get_clean();
+
+        // Append your plugin content to the post/page content
+        $content .= $plugin_content;
     }
 
-    ob_start();
-    ?>
-    <div id="ai-chatbot">
-        <div class="chatbot-header">
-            <div class="chatbot-image-placeholder"></div>
-            <div>
-                <span class="chatbot-name">AIBuddy</span>
-                <span class="chatbot-status">
-                    <span class="chatbot-status-dot"></span>
-                    <span class="chatbot-status-text">Online Now</span>
-                </span>
-            </div>
-        </div>
-        <div id="ai-chatbot-conversation" class="ai-chatbot-conversation">
-            <!-- Messages will be dynamically inserted here -->
-        </div>
-        <form id="ai-chatbot-form">
-            <input type="text" id="ai-chatbot-input" placeholder="Type your message here...">
-            <input type="submit" id="ai-chatbot-submit" value="Send">
-        </form>
-        <?php echo 'shortcode has been executed'; ?>:
-    </div>
-    <?php
-    return ob_get_clean();
+    return $content;
 }
 
 function ai_chatbot_add_admin_menu()
@@ -319,14 +322,10 @@ function ai_chatbot_settings_section_callback()
 
 
 session_start();
-error_log('Session started');
-echo 'Test test';
 
 if (!isset($_SESSION['chat_history'])) {
     $_SESSION['chat_history'] = array();
 }
-
-error_log('chat_history started');
 
 // Hook the ai_chatbot_enqueue_scripts function to the 'wp_enqueue_scripts' action
 add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
@@ -337,8 +336,8 @@ add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_reques
 
 add_action('admin_menu', 'ai_chatbot_add_admin_menu');
 
-add_shortcode('ai_chatbot', 'ai_chatbot_shortcode');
-
+// Hook into the_content filter
+add_filter('the_content', 'automatic_integration_callback');
 
 add_action('admin_init', 'ai_chatbot_settings_init');
 
