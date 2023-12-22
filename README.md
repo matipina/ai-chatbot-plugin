@@ -10,8 +10,8 @@ Pasos para subir archivos:
 Bajar ultima V
 1. git pull
 
-Como hacer brunches
-1. git check out -b nombredebrunch -> Crea una nueva brunch y se mueve ahi
+Como hacer branches
+1. git check out -b nombredebranch -> Crea una nueva branch y se mueve ahí
 
 
 Checkear status de update del repositorio
