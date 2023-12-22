@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Function to convert hex color to RGBA
+    function hexToRGBA(hex, opacity) {
+        let r = parseInt(hex.slice(1, 3), 16),
+            g = parseInt(hex.slice(3, 5), 16),
+            b = parseInt(hex.slice(5, 7), 16);
+
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+
     // Set chatbot image placeholder and minimized chatbot image if the URL is provided
     const chatbotImagePlaceholder = document.querySelector('.chatbot-image-placeholder');
     const chatbotMinimized = document.querySelector('.chatbot-minimized');
@@ -12,9 +21,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Update primary color for chatbot elements and user messages
     if (aiChatbotSettings.primary_color) {
         const root = document.documentElement;
         root.style.setProperty('--chatbot-primary-color', aiChatbotSettings.primary_color);
+
+        const userMessageColor = hexToRGBA(aiChatbotSettings.primary_color, 0.3); // 30% opacity
+        document.querySelectorAll('.user-message').forEach(function (message) {
+            message.style.backgroundColor = userMessageColor;
+        });
     }
 
     const chatForm = document.getElementById('ai-chatbot-form');
@@ -30,6 +45,11 @@ document.addEventListener('DOMContentLoaded', function () {
         messageElement.textContent = text;
         chatConversation.appendChild(messageElement);
         chatConversation.scrollTop = chatConversation.scrollHeight; // Scroll to the latest message
+
+        if (className === 'user-message') {
+            messageElement.style.backgroundColor = aiChatbotSettings.primary_color ?
+                hexToRGBA(aiChatbotSettings.primary_color, 0.3) : 'transparent';
+        }
     }
 
     // Event listener for chat form submission
@@ -47,12 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 body: 'action=ai_chatbot_handle_request&message=' + encodeURIComponent(message)
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success && data.data.response) {
                     appendMessage(data.data.response, 'bot-message'); // Append bot response

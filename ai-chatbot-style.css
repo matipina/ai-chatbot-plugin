@@ -1,6 +1,7 @@
 /* General Styles for Plugin Settings Page */
 :root {
-    --chatbot-primary-color: #0018F9; /* Default primary color, can be overridden by JS */
+    --chatbot-primary-color: #0018F9; /* Default primary color */
+    --chatbot-primary-opacity: 1; /* Default opacity */
 }
 
 .my-plugin-settings {
@@ -85,7 +86,6 @@
 
 /* Style for user messages */
 .user-message {
-    background-color: var(--chatbot-primary-color);
     align-self: flex-end;
     margin-left: 30%;
 }
