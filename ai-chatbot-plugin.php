@@ -19,6 +19,7 @@ $ai_chatbot_questions = array(
     "How can customers contact you for support?"
 );
 
+
 /**
  * Updates the chat history with a new user and bot message.
  *
@@ -38,6 +39,7 @@ function update_chat_history($user_message, $bot_message)
         array_shift($_SESSION['chat_history']);
     }
 }
+
 
 /**
  * Generates a prompt for an AI system based on user input, custom information, and conversation history.
@@ -83,6 +85,8 @@ function ai_chatbot_enqueue_scripts()
     // Enqueue the AI Chatbot CSS file
     wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
 
+    // Enqueue Font Awesome for chatbot toggle icon
+    wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
     // Localize the AI Chatbot JavaScript file to make 'ajaxurl' available
     wp_localize_script('ai-chatbot-js', 'aiChatbot', array('ajaxurl' => admin_url('admin-ajax.php')));
 }
@@ -313,7 +317,6 @@ function ai_chatbot_question_render($args)
     </div>
     <?php
 }
-
 
 function ai_chatbot_settings_section_callback()
 {

@@ -63,7 +63,7 @@
 /* Style for the chat conversation area */
 #ai-chatbot-conversation {
     padding: 10px;
-    height: 300px; /* Adjust height as needed */
+    height: 300px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -109,7 +109,7 @@
 
 /* Style for the send button */
 #ai-chatbot-submit {
-    background-color: #0018F9; /* Updated color */
+    background-color: #0018F9;
     color: white;
     padding: 10px 15px;
     border: none;
@@ -118,48 +118,33 @@
 }
 
 #ai-chatbot-submit:hover {
-    background-color: #0000cc; /* Darker shade for hover */
+    background-color: #0000cc;
 }
 
 /* New Styles for Chatbot Header */
 .chatbot-header {
-    background-color: #0018F9; /* Blue background */
+    background-color: #0018F9;
     color: white;
     padding: 10px;
     display: flex;
     align-items: center;
-    border-top-left-radius: 10px; /* Match container's border-radius */
-    border-top-right-radius: 10px; /* Match container's border-radius */
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    position: relative; /* Needed for absolute positioning of children */
 }
 
 .chatbot-image-placeholder {
     background-color: white;
-    width: 40px; /* Adjust as needed */
-    height: 40px; /* Adjust as needed */
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: inline-block;
     margin-right: 10px;
 }
 
 .chatbot-name {
-    font-size: 18px; /* Adjust as needed */
+    font-size: 18px;
     font-weight: bold;
-}
-
-.ai-chatbot-question {
-    margin-bottom: 20px;
-}
-
-.ai-chatbot-question strong,
-.ai-chatbot-question p,
-.ai-chatbot-question textarea {
-    display: block; /* Ensures each element appears on a new line */
-    margin-bottom: 10px; /* Adds space between the elements */
-}
-
-.ai-chatbot-question textarea {
-    width: 100%; /* Full width of the container */
-    box-sizing: border-box; /* Padding and border included in width and height */
 }
 
 .chatbot-status {
@@ -179,5 +164,46 @@
 
 .chatbot-status-text {
     color: white;
-    opacity: 0.5; /* Apply opacity only to the text */
+    opacity: 0.5;
+}
+
+/* Style for the minimize button */
+.chatbot-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: white;
+}
+
+/* Styles when the chatbot is minimized */
+#ai-chatbot.minimized {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    padding: 0;
+    overflow: hidden;
+    background-color: gray; /* Match the color of the circle */
+}
+
+#ai-chatbot.minimized .chatbot-header,
+#ai-chatbot.minimized #ai-chatbot-conversation,
+#ai-chatbot.minimized #ai-chatbot-form,
+#ai-chatbot.minimized .chatbot-toggle {
+    display: none;
+}
+
+/* Style for the minimized chatbot (gray circle) */
+.chatbot-minimized {
+    width: 50px;
+    height: 50px;
+    background-color: gray;
+    border-radius: 50%;
+    cursor: pointer;
+    display: none; /* Hide the separate gray circle when minimized */
+    position: absolute;
+    top: 10px;
+    right: 10px;
 }
