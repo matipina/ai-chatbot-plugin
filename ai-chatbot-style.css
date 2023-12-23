@@ -144,7 +144,7 @@
     border-radius: 50%;
     display: inline-block;
     margin-right: 10px;
-    background-image: url('https://pics.craiyon.com/2023-11-06/14d7c1db79a944eeab600fcf5eaba9c8.webp'); /* Replace with your image path */
+    background-image: url('BotFace.png'); /* Replace with your image path */
     background-size: cover; /* Ensures the image covers the entire area */
     background-position: center; /* Centers the image */
 }
@@ -192,7 +192,7 @@
     border-radius: 50%;
     padding: 0;
     overflow: hidden;
-    background-image: url('path_to_your_image.jpg'); /* Replace with your image path */
+    background-image: url('BotFace.png'); /* Replace with your image path */
     background-size: cover; /* Ensures the image covers the entire area */
     background-position: center; /* Centers the image */
 }
@@ -208,7 +208,7 @@
 .chatbot-minimized {
     width: 60px; /* Adjust the size as needed */
     height: 60px; /* Adjust the size as needed */
-    background-image: url('https://pics.craiyon.com/2023-11-06/14d7c1db79a944eeab600fcf5eaba9c8.webp');
+    background-image: url('BotFace.png');
     background-size: cover; /* Ensures the image covers the entire area */
     background-position: 50% 50%; /* Centers the image */
     border-radius: 50%;
