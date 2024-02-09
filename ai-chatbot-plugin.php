@@ -6,6 +6,18 @@
  * Author: Your Name
  */
 
+function myplugin_enqueue_admin_dark_mode_style()
+{
+    wp_enqueue_style('myplugin-admin-dark-mode', plugins_url('admin-dark-mode.css', __FILE__));
+}
+add_action('admin_enqueue_scripts', 'myplugin_enqueue_admin_dark_mode_style', 100);
+
+function myplugin_enqueue_google_fonts()
+{
+    wp_enqueue_style('myplugin-dm-sans-font', 'https://fonts.googleapis.com/css2?family=DM+Sans&display=swap');
+}
+add_action('admin_enqueue_scripts', 'myplugin_enqueue_google_fonts');
+
 $ai_chatbot_questions = array(
     "Describe your products or services in depth.",
     "What is your business's unique selling point?",
@@ -100,7 +112,7 @@ function ai_chatbot_enqueue_scripts()
         'image_url' => get_option('ai_chatbot_image_url'),
         'primary_color' => get_option('ai_chatbot_primary_color', '#007bff') // Default blue color
     );
-    
+
     wp_localize_script('ai-chatbot-js', 'aiChatbotSettings', $chatbot_settings);
 }
 
@@ -149,10 +161,25 @@ function ai_chatbot_handle_request()
     $prompt = generate_ai_prompt($user_message, $custom_info);
 
     // OpenAI API URL
-    $openai_url = 'https://api.openai.com/v1/engines/text-davinci-003/completions';
+    $openai_url = 'https://api.openai.com/v1/chat/completions';
 
     // Prepare data for the API request
-    $data = array('prompt' => $prompt, 'max_tokens' => 150);
+    $data = array(
+        'model' => 'gpt-3.5-turbo', // Specify the model here
+        'messages' => array(
+            array(
+                'role' => 'system',
+                'content' => $prompt
+
+            ),
+            array(
+                'role' => 'user',
+                'content' => $user_message
+            )
+        ),
+        'temperature' => 0.7,
+        'max_tokens' => 150
+    );
 
     // Make a POST request to the OpenAI API
     $response = wp_remote_post($openai_url, array(
@@ -163,7 +190,8 @@ function ai_chatbot_handle_request()
         'body' => json_encode($data),
         'method' => 'POST',
         'data_format' => 'body',
-    ));
+    )
+    );
 
     // Check for API request errors
     if (is_wp_error($response)) {
@@ -173,7 +201,7 @@ function ai_chatbot_handle_request()
 
     // Decode the API response and extract the bot's response
     $body = json_decode(wp_remote_retrieve_body($response), true);
-    $bot_response = $body['choices'][0]['text'];
+    $bot_response = $body['choices'][0]['message']['content'];
 
     // Update the chat history with the user's message and bot's response
     update_chat_history($user_message, $bot_response);
@@ -375,7 +403,8 @@ function ai_chatbot_image_url_render()
     <?php
 }
 
-function ai_chatbot_primary_color_render() {
+function ai_chatbot_primary_color_render()
+{
     $color = get_option('ai_chatbot_primary_color', '#007bff'); // Default blue color
     echo '<input type="color" name="ai_chatbot_primary_color" value="' . esc_attr($color) . '">';
 }
