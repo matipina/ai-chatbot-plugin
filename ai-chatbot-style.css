@@ -122,7 +122,8 @@
 }
 
 #ai-chatbot-submit:hover {
-    background-color: #0000cc;
+    background-color: var(--chatbot-primary-color);
+    opacity: 0.8;
 }
 
 /* New Styles for Chatbot Header */

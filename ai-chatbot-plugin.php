@@ -3,7 +3,7 @@
  * Plugin Name: AI Chatbot
  * Description: A WordPress plugin for integrating an AI Chatbot using OpenAI's API.
  * Version: 1.0.0
- * Author: Your Name
+ * Author: Tiago Aragona & Matias Piña
  */
 
 function myplugin_enqueue_admin_dark_mode_style()
@@ -71,12 +71,14 @@ function generate_ai_prompt($new_user_input, $custom_info)
     foreach ($_SESSION['chat_history'] as $message_pair) {
         $history .= "User: " . $message_pair['user'] . "\nBot: " . $message_pair['bot'] . "\n";
     }
-
+    
     // Load instruction text from a file
-    $instructionFilePath = 'instruction.txt';
+    $instructionFilePath = plugin_dir_path(__FILE__) . 'instruction.txt';
     $instruction = file_get_contents($instructionFilePath);
+    
     // Combine instruction, custom information, and conversation history
-    return $instruction . $custom_info . "\n\n" . $history . "User: " . $new_user_input . "\nBot:";
+    $prompt = $instruction . "\n" . $custom_info . "\n\n" . $history . "User: " . $new_user_input . "\nBot:";
+    return $prompt;
 }
 
 /**
@@ -126,8 +128,17 @@ function ai_chatbot_enqueue_scripts()
  *
  * @return void
  */
+
+function plugin_custom_log($message) {
+    $log_file = plugin_dir_path(__FILE__) . 'ai-chatbot-debug.log';
+    $current_time = date('Y-m-d H:i:s');
+    $log_message = $current_time . ' - ' . $message . "\n";
+    file_put_contents($log_file, $log_message, FILE_APPEND);
+}
+
 function ai_chatbot_handle_request()
 {
+    $_SESSION['emotion_analysis_done'] = false;
     // Check if AI Chatbot is enabled
     if (get_option('ai_chatbot_enabled') != '1') {
         wp_send_json_error(array('error' => 'AI ChatBot is disabled'));
@@ -190,8 +201,7 @@ function ai_chatbot_handle_request()
         'body' => json_encode($data),
         'method' => 'POST',
         'data_format' => 'body',
-    )
-    );
+    ));
 
     // Check for API request errors
     if (is_wp_error($response)) {
@@ -203,11 +213,87 @@ function ai_chatbot_handle_request()
     $body = json_decode(wp_remote_retrieve_body($response), true);
     $bot_response = $body['choices'][0]['message']['content'];
 
-    // Update the chat history with the user's message and bot's response
+    // Perform emotional analysis on the user's message
+    $emotion_category = perform_emotional_analysis($user_message);
+    if ($emotion_category !== false) {
+        // Emotion analysis successful, handle accordingly
+        // For example, update emotional analysis counters or perform additional actions based on the emotion category
+        update_emotion_counters($emotion_category); // Assuming you have a function to update emotion counters
+    } else {
+        // Emotion analysis failed, handle accordingly
+        // For example, log an error or perform alternative actions
+    }
+
+    // Update the chat history with the user's message and the bot's response
     update_chat_history($user_message, $bot_response);
 
-    // Send a JSON-encoded success response with the bot's response
+    // Send a JSON-encoded success response with just the bot's response
     wp_send_json_success(array('response' => $bot_response));
+}
+
+function perform_emotional_analysis($user_message)
+{
+    // Check if emotional analysis has already been performed for this message
+    if (!empty($_SESSION['emotion_analysis_done'])) {
+        return false; // Skip the analysis to avoid double counting
+    }
+
+    // Retrieve OpenAI API key
+    $openai_api_key = get_option('ai_chatbot_openai_api_key');
+    if (!$openai_api_key) {
+        return false; // Return false indicating failure
+    }
+
+    // Define the prompt for emotional analysis
+    $emotion_analysis_prompt = "Analyze the emotion of the following message: \"$user_message\". Answer only one word: Answer only one word: happiness, sadness, anger, fear, neutral";
+
+    // Prepare data for the emotional analysis request
+    $emotion_analysis_data = array(
+        'model' => 'gpt-3.5-turbo', // Keep using the same model for consistency
+        'messages' => array(
+            array(
+                'role' => 'system',
+                'content' => $emotion_analysis_prompt
+            ),
+            array(
+                'role' => 'user',
+                'content' => $user_message // Just the last message for emotion analysis
+            )
+        ),
+        'temperature' => 0.7,
+        'max_tokens' => 60
+    );
+
+    // Send a POST request to the OpenAI API for emotional analysis
+    $emotion_response = wp_remote_post('https://api.openai.com/v1/chat/completions', array(
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $openai_api_key
+        ),
+        'body' => json_encode($emotion_analysis_data),
+        'method' => 'POST',
+        'data_format' => 'body',
+    ));
+
+    // Check for errors in the API response
+    if (!is_wp_error($emotion_response)) {
+        // Decode the API response
+        $emotion_body = json_decode(wp_remote_retrieve_body($emotion_response), true);
+
+        // Extract the emotional analysis text
+        $emotion_text = $emotion_body['choices'][0]['message']['content'];
+
+        // Categorize the emotion based on the response
+        $emotion_category = categorize_emotion($emotion_text);
+
+        // After performing emotional analysis successfully,
+        // set a session flag to prevent duplicate analysis
+        $_SESSION['emotion_analysis_done'] = true;
+
+        return $emotion_category; // Return the emotion category
+    }
+
+    return false; // Return false indicating failure
 }
 
 /**
@@ -276,11 +362,27 @@ function ai_chatbot_add_admin_menu()
 {
     add_menu_page('AI ChatBot Settings', 'AI ChatBot', 'manage_options', 'ai_chatbot', 'ai_chatbot_settings_page');
 }
+function categorize_emotion($emotion_text) {
+    $emotion_text = strtolower($emotion_text);
+    if (strpos($emotion_text, 'happiness') !== false) return 'happiness';
+    if (strpos($emotion_text, 'sadness') !== false) return 'sadness';
+    if (strpos($emotion_text, 'anger') !== false) return 'anger';
+    if (strpos($emotion_text, 'fear') !== false) return 'fear';
+    // Default to 'Neutral' if no specific emotion is detected
+    return 'Neutral';
+}
+
+function update_emotion_counters($emotion_category) {
+    $option_name = 'ai_chatbot_emotion_count_' . $emotion_category;
+    $count = get_option($option_name, 0);
+    update_option($option_name, ++$count);
+}
 
 function ai_chatbot_settings_page()
 {
     ?>
     <div class="wrap">
+    <div id="ai-chatbot-admin-container">
         <h1>AI ChatBot Settings</h1>
         <form method="post" action="options.php">
             <?php
@@ -288,6 +390,7 @@ function ai_chatbot_settings_page()
             do_settings_sections('ai_chatbot_plugin_settings');
             submit_button();
             ?>
+            <?php display_emotion_counters_admin(); // Ensure this is correctly placed within PHP context ?>
         </form>
     </div>
     <?php
@@ -393,6 +496,15 @@ function ai_chatbot_question_render($args)
 function ai_chatbot_settings_section_callback()
 {
     echo __('Answer the following questions to customize your AI ChatBot.', 'wordpress');
+}
+function display_emotion_counters_admin() {
+    $emotions = ['happiness', 'sadness', 'anger', 'fear', 'neutral']; // Adjust based on your categorization
+    echo '<div class="emotion-counters">';
+    foreach ($emotions as $emotion) {
+        $counter = get_option('ai_chatbot_emotion_count_' . $emotion, 0);
+        echo '<p>' . ucfirst($emotion) . ' Messages: ' . $counter . '</p>';
+    }
+    echo '</div>';
 }
 
 function ai_chatbot_image_url_render()

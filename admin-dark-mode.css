@@ -1,106 +1,96 @@
-/* admin-dark-mode.css - Full Combined CSS for Dark Mode, White Titles, and Text Input Color */
-
 /* Import DM Sans font */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans&display=swap');
 
-/* General Styles */
-html, body.wp-admin {
+/* Scoped Styles for AI ChatBot Plugin Admin Page */
+#ai-chatbot-admin-container html, 
+#ai-chatbot-admin-container body.wp-admin {
     font-family: 'DM Sans', sans-serif; /* DM Sans font */
-    color: #ffffff; /* All text set to white */
+    color: #000000; /* All text set to white */
     font-size: 14px; /* Standard font size */
 }
 
-/* General background */
-#wpwrap,
-#adminmenu,
-#wpcontent,
-#wpfooter {
+
+#ai-chatbot-admin-container #wpwrap,
+#ai-chatbot-admin-container #adminmenu,
+#ai-chatbot-admin-container #wpcontent,
+#ai-chatbot-admin-container #wpfooter {
     background-color: #04041A;
 }
 
-/* Header */
-#wpadminbar {
+#ai-chatbot-admin-container #wpadminbar {
     background-color: #04041A;
 }
 
-/* Main Admin Menu */
-#adminmenu {
+#ai-chatbot-admin-container #adminmenu {
     background-color: #04041A;
     margin-bottom: 0;
 }
 
-#adminmenu a {
+#ai-chatbot-admin-container #adminmenu a {
     padding: 10px 20px; /* Increased padding for better spacing */
 }
 
-#adminmenu .wp-not-current-submenu .wp-submenu,
-.folded #adminmenu .wp-has-current-submenu .wp-submenu {
+#ai-chatbot-admin-container #adminmenu .wp-not-current-submenu .wp-submenu,
+#ai-chatbot-admin-container .folded #adminmenu .wp-has-current-submenu .wp-submenu {
     padding: 10px; /* Consistent padding for submenus */
 }
 
-/* Admin menu links */
-#adminmenu a:hover,
-#adminmenu li.menu-top:hover,
-#adminmenu li.opensub>a.menu-top,
-#adminmenu li>a.menu-top:focus {
+#ai-chatbot-admin-container #adminmenu a:hover,
+#ai-chatbot-admin-container #adminmenu li.menu-top:hover,
+#ai-chatbot-admin-container #adminmenu li.opensub>a.menu-top,
+#ai-chatbot-admin-container #adminmenu li>a.menu-top:focus {
     background-color: #1abc9c;
 }
 
-/* Submenu */
-#adminmenu .wp-submenu,
-#adminmenu .wp-has-current-submenu .wp-submenu,
-#adminmenu .wp-has-current-submenu.opensub .wp-submenu,
-.folded #adminmenu .wp-has-current-submenu .wp-submenu,
-#adminmenu a.wp-has-current-submenu:focus+.wp-submenu {
+#ai-chatbot-admin-container #adminmenu .wp-submenu,
+#ai-chatbot-admin-container #adminmenu .wp-has-current-submenu .wp-submenu,
+#ai-chatbot-admin-container #adminmenu .wp-has-current-submenu.opensub .wp-submenu,
+#ai-chatbot-admin-container .folded #adminmenu .wp-has-current-submenu .wp-submenu,
+#ai-chatbot-admin-container #adminmenu a.wp-has-current-submenu:focus+.wp-submenu {
     background: #2c3e50;
 }
 
-/* Submenu links */
-#adminmenu .wp-submenu a,
-#adminmenu .wp-submenu a:focus, 
-#adminmenu .wp-submenu a:hover, 
-#adminmenu .wp-submenu li.current a {
+#ai-chatbot-admin-container #adminmenu .wp-submenu a,
+#ai-chatbot-admin-container #adminmenu .wp-submenu a:focus, 
+#ai-chatbot-admin-container #adminmenu .wp-submenu a:hover, 
+#ai-chatbot-admin-container #adminmenu .wp-submenu li.current a {
     background-color: #1abc9c;
 }
 
-/* Dashboard Widgets */
-.postbox {
+#ai-chatbot-admin-container .postbox {
     background-color: #34495e;
     border-color: #1abc9c;
     margin-bottom: 20px; /* Consistent spacing between widgets */
     padding: 20px; /* Internal padding for widgets */
 }
 
-.postbox h2 {
+#ai-chatbot-admin-container .postbox h2 {
     font-size: 16px; /* Heading size for widget titles */
 }
 
-/* Forms and Inputs */
-input[type="text"],
-input[type="password"],
-input[type="email"],
-textarea,
-select {
+#ai-chatbot-admin-container input[type="text"],
+#ai-chatbot-admin-container input[type="password"],
+#ai-chatbot-admin-container input[type="email"],
+#ai-chatbot-admin-container textarea,
+#ai-chatbot-admin-container select {
     background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white background */
-    color: #ffffff; /* Text in inputs set to black for readability */
-    border: 1px solid #ffffff; /* White border */
+    color: #000000; /* Text in inputs set to white for readability */
+    border: 1px solid #000000; /* White border */
     padding: 8px 10px; /* Increased padding for better visibility */
     margin-bottom: 10px; /* Consistent spacing between form elements */
     width: 100%; /* Full width for better layout */
     box-sizing: border-box; /* Ensures padding doesn't affect width */
 }
 
-/* Focus styles for text inputs and textareas */
-input[type="text"]:focus,
-input[type="password"]:focus,
-input[type="email"]:focus,
-textarea:focus {
+#ai-chatbot-admin-container input[type="text"]:focus,
+#ai-chatbot-admin-container input[type="password"]:focus,
+#ai-chatbot-admin-container input[type="email"]:focus,
+#ai-chatbot-admin-container textarea:focus {
     border-color: #1abc9c; /* Change border color on focus for visibility */
     box-shadow: 0 0 5px rgba(26, 188, 156, 0.5); /* Adds a glow effect on focus */
 }
 
-/* Buttons */
-.wp-core-ui .button-primary {
+#ai-chatbot-admin-container .wp-core-ui .button-primary {
     background: #1abc9c;
     border-color: #16a085;
     text-shadow: none;
@@ -108,30 +98,28 @@ textarea:focus {
     margin: 10px 0; /* Space around buttons */
 }
 
-.wp-core-ui .button-primary:hover,
-.wp-core-ui .button-primary:focus {
+#ai-chatbot-admin-container .wp-core-ui .button-primary:hover,
+#ai-chatbot-admin-container .wp-core-ui .button-primary:focus {
     background: #16a085;
     border-color: #14976c;
 }
 
-/* Tables */
-.wp-list-table thead {
+#ai-chatbot-admin-container .wp-list-table thead {
     background-color: #34495e;
 }
 
-/* Footer */
-#footer-upgrade, #footer-thankyou {
+#ai-chatbot-admin-container #footer-upgrade, 
+#ai-chatbot-admin-container #footer-thankyou {
     padding-top: 20px; /* Padding for footer */
 }
 
-/* Settings Page Titles */
-.wp-admin .wrap h1, 
-.wp-admin .wrap h2, 
-.wp-admin .wrap h3, 
-.wp-admin .wrap h4, 
-.wp-admin .wrap h5, 
-.wp-admin .wrap h6,
-.wp-admin .form-table th,
-.wp-admin .form-table label {
+#ai-chatbot-admin-container .wp-admin .wrap h1, 
+#ai-chatbot-admin-container .wp-admin .wrap h2, 
+#ai-chatbot-admin-container .wp-admin .wrap h3, 
+#ai-chatbot-admin-container .wp-admin .wrap h4, 
+#ai-chatbot-admin-container .wp-admin .wrap h5, 
+#ai-chatbot-admin-container .wp-admin .wrap h6,
+#ai-chatbot-admin-container .wp-admin .form-table th,
+#ai-chatbot-admin-container .wp-admin .form-table label {
     color: #ffffff; /* Titles set to white */
 }
