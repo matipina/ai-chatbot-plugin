@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function () {
+jQuery(document).ready(function($) {
     // Function to convert hex color to RGBA
     function hexToRGBA(hex, opacity) {
         let r = parseInt(hex.slice(1, 3), 16),

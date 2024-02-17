@@ -12,6 +12,15 @@ function myplugin_enqueue_admin_dark_mode_style()
 }
 add_action('admin_enqueue_scripts', 'myplugin_enqueue_admin_dark_mode_style', 100);
 
+function myplugin_enqueue_bootstrap() {
+    // Enqueue Bootstrap CSS
+    wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css');
+    
+    // Enqueue Bootstrap JS
+    wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js', array('jquery'), null, true);
+}
+add_action('admin_enqueue_scripts', 'myplugin_enqueue_bootstrap');
+
 function myplugin_enqueue_google_fonts()
 {
     wp_enqueue_style('myplugin-dm-sans-font', 'https://fonts.googleapis.com/css2?family=DM+Sans&display=swap');
@@ -92,31 +101,39 @@ function generate_ai_prompt($new_user_input, $custom_info)
  * @return void
  */
 
-function ai_chatbot_enqueue_scripts()
-{
-    // Enqueue the AI Chatbot JavaScript file with jQuery as a dependency
-    wp_enqueue_script('ai-chatbot-js', plugins_url('/ai-chatbot.js', __FILE__), array('jquery'), '1.0.0', true);
-
-    // Enqueue the AI Chatbot CSS file
-    wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
-
-    // Enqueue Font Awesome for chatbot toggle icon
-    wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
-
-    // Combine and pass settings to the JavaScript file
-    $chatbot_settings = array(
-        'ajaxurl' => admin_url('admin-ajax.php'), // AJAX URL for WordPress
-        'image_url' => get_option('ai_chatbot_image_url') // Pass the image URL
-    );
-
-    $chatbot_settings = array(
-        'ajaxurl' => admin_url('admin-ajax.php'),
-        'image_url' => get_option('ai_chatbot_image_url'),
-        'primary_color' => get_option('ai_chatbot_primary_color', '#007bff') // Default blue color
-    );
-
-    wp_localize_script('ai-chatbot-js', 'aiChatbotSettings', $chatbot_settings);
-}
+ function ai_chatbot_enqueue_scripts()
+ {
+     // Enqueue the AI Chatbot JavaScript file with jQuery as a dependency
+     wp_enqueue_script('ai-chatbot-js', plugins_url('/ai-chatbot.js', __FILE__), array('jquery'), '1.0.0', true);
+ 
+     // Enqueue the AI Chatbot CSS file
+     wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
+ 
+     // Enqueue Font Awesome for chatbot toggle icon
+     wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+ 
+     // Combine and pass settings to the JavaScript file
+     $chatbot_settings = array(
+         'ajaxurl' => admin_url('admin-ajax.php'), // AJAX URL for WordPress
+         'image_url' => get_option('ai_chatbot_image_url') // Pass the image URL
+     );
+ 
+     $chatbot_settings = array(
+         'ajaxurl' => admin_url('admin-ajax.php'),
+         'image_url' => get_option('ai_chatbot_image_url'),
+         'primary_color' => get_option('ai_chatbot_primary_color', '#007bff') // Default blue color
+     );
+ 
+     wp_localize_script('ai-chatbot-js', 'aiChatbotSettings', $chatbot_settings);
+ 
+     // Add a script to wait for DOMContentLoaded
+     wp_add_inline_script('ai-chatbot-js', '
+         document.addEventListener("DOMContentLoaded", function() {
+             // Your existing code here
+         });
+     ', 'after');
+ }
+ 
 
 /**
  * Handles the AI Chatbot request, processes user input, and communicates with the OpenAI API.
@@ -378,20 +395,37 @@ function update_emotion_counters($emotion_category) {
     update_option($option_name, ++$count);
 }
 
-function ai_chatbot_settings_page()
-{
+function ai_chatbot_settings_page() {
     ?>
     <div class="wrap">
-    <div id="ai-chatbot-admin-container">
         <h1>AI ChatBot Settings</h1>
-        <form method="post" action="options.php">
-            <?php
-            settings_fields('ai_chatbot_plugin_settings');
-            do_settings_sections('ai_chatbot_plugin_settings');
-            submit_button();
-            ?>
-            <?php display_emotion_counters_admin(); // Ensure this is correctly placed within PHP context ?>
-        </form>
+        <div id="ai-chatbot-admin-container">
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs" id="aiChatbotTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="emotion-counters-tab" data-toggle="tab" href="#emotionCounters" role="tab" aria-controls="emotionCounters" aria-selected="true">Emotion Counters</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="custom-questions-tab" data-toggle="tab" href="#customQuestions" role="tab" aria-controls="customQuestions" aria-selected="false">Custom Questions</a>
+                </li>
+            </ul>
+
+            <!-- Tab panes -->
+            <div class="tab-content" style="margin-top: 20px;">
+                <div class="tab-pane fade show active" id="emotionCounters" role="tabpanel" aria-labelledby="emotion-counters-tab">
+                    <?php display_emotion_counters_admin(); ?>
+                </div>
+                <div class="tab-pane fade" id="customQuestions" role="tabpanel" aria-labelledby="custom-questions-tab">
+                    <form method="post" action="options.php">
+                        <?php
+                        settings_fields('ai_chatbot_plugin_settings');
+                        do_settings_sections('ai_chatbot_plugin_settings');
+                        submit_button();
+                        ?>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
     <?php
 }
@@ -498,13 +532,23 @@ function ai_chatbot_settings_section_callback()
     echo __('Answer the following questions to customize your AI ChatBot.', 'wordpress');
 }
 function display_emotion_counters_admin() {
-    $emotions = ['happiness', 'sadness', 'anger', 'fear', 'neutral']; // Adjust based on your categorization
-    echo '<div class="emotion-counters">';
+    $emotions = ['happiness', 'sadness', 'anger', 'fear', 'neutral']; // List of emotions
+
+    echo '<div class="row">'; // Bootstrap row for a responsive grid layout
     foreach ($emotions as $emotion) {
-        $counter = get_option('ai_chatbot_emotion_count_' . $emotion, 0);
-        echo '<p>' . ucfirst($emotion) . ' Messages: ' . $counter . '</p>';
+        $counter = get_option('ai_chatbot_emotion_count_' . $emotion, 0); // Get the count for each emotion
+
+        // Display each emotion counter within a Bootstrap card
+        echo '<div class="col-md-4 mb-4">'; // Bootstrap column with margins for spacing
+        echo '<div class="card">'; // Bootstrap card for styling
+        echo '<div class="card-body text-left">'; // Card body with text centered
+        echo '<p class="card-text" style="font-size: 2em;">' . $counter . '</p>'; // Display the counter in a large font size
+        echo '<h5 class="card-title">' . ucfirst($emotion) . '</h5>'; // Display the emotion name
+        echo '</div>'; // Close card-body
+        echo '</div>'; // Close card
+        echo '</div>'; // Close column
     }
-    echo '</div>';
+    echo '</div>'; // Close row
 }
 
 function ai_chatbot_image_url_render()
