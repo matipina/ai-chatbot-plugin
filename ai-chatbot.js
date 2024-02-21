@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
 
     // Set chatbot image placeholder and minimized chatbot image if the URL is provided
     const chatbotImagePlaceholder = document.querySelector('.chatbot-image-placeholder');
-    const chatbotMinimized = document.querySelector('.chatbot-minimized');
+    let chatbotMinimized = document.querySelector('.chatbot-minimized');
 
     if (aiChatbotSettings.image_url) {
         if (chatbotImagePlaceholder) {
@@ -38,6 +38,12 @@ jQuery(document).ready(function($) {
     const chatbotContainer = document.getElementById('ai-chatbot');
     const chatbotToggle = document.getElementById('chatbot-toggle');
 
+    // Initialize chatbot in minimized state if chatbotMinimized is defined
+    if (chatbotMinimized) {
+        chatbotContainer.classList.add('minimized');
+        chatbotMinimized.style.display = 'block'; // Show the minimized icon by default
+    }
+
     // Function to append messages to the chat conversation
     function appendMessage(text, className) {
         const messageElement = document.createElement('div');
@@ -53,7 +59,7 @@ jQuery(document).ready(function($) {
     }
 
     // Event listener for chat form submission
-    chatForm.addEventListener('submit', function (e) {
+    chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const message = chatInput.value.trim();
 
@@ -63,9 +69,9 @@ jQuery(document).ready(function($) {
             fetch(aiChatbotSettings.ajaxurl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
                 },
-                body: 'action=ai_chatbot_handle_request&message=' + encodeURIComponent(message)
+                body: 'action=ai_chatbot_handle_request&message=' + encodeURIComponent(message),
             })
             .then(response => response.json())
             .then(data => {
@@ -86,12 +92,17 @@ jQuery(document).ready(function($) {
     // Event listener to handle chatbot minimization
     chatbotToggle.addEventListener('click', function() {
         chatbotContainer.classList.add('minimized');
-        chatbotMinimized.style.display = 'block'; // Show the minimized icon
+        if (chatbotMinimized) {
+            chatbotMinimized.style.display = 'block'; // Ensure this only executes if chatbotMinimized is defined
+        }
     });
 
-    // Event listener to handle chatbot expansion from the minimized state
-    chatbotMinimized.addEventListener('click', function() {
-        chatbotContainer.classList.remove('minimized');
-        chatbotMinimized.style.display = 'none'; // Hide the minimized icon
-    });
+    // Check again before adding the event listener in case the element was dynamically added
+    chatbotMinimized = document.querySelector('.chatbot-minimized');
+    if (chatbotMinimized) {
+        chatbotMinimized.addEventListener('click', function() {
+            chatbotContainer.classList.remove('minimized');
+            chatbotMinimized.style.display = 'none'; // Hide the minimized icon
+        });
+    }
 });

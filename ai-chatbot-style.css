@@ -65,6 +65,11 @@
     flex-direction: column;
 }
 
+.card.total-messages { /* Assuming you add 'total-messages' class to your card */
+    background-color: blue !important; /* Use !important to override Bootstrap styles if necessary */
+    color: white !important;
+}
+
 /* Style for the chat conversation area */
 #ai-chatbot-conversation {
     padding: 10px;

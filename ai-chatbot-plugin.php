@@ -103,6 +103,7 @@ function generate_ai_prompt($new_user_input, $custom_info)
 
  function ai_chatbot_enqueue_scripts()
  {
+    wp_enqueue_script('jquery');
      // Enqueue the AI Chatbot JavaScript file with jQuery as a dependency
      wp_enqueue_script('ai-chatbot-js', plugins_url('/ai-chatbot.js', __FILE__), array('jquery'), '1.0.0', true);
  
@@ -340,7 +341,7 @@ function automatic_integration_callback($content)
             <div class="chatbot-header">
                 <div class="chatbot-image-placeholder"></div>
                 <div>
-                    <span class="chatbot-name">AIBuddy</span>
+                    <span class="chatbot-name">Customer Service</span>
                     <span class="chatbot-status">
                         <span class="chatbot-status-dot"></span>
                         <span class="chatbot-status-text">Online Now</span>
@@ -533,8 +534,26 @@ function ai_chatbot_settings_section_callback()
 }
 function display_emotion_counters_admin() {
     $emotions = ['happiness', 'sadness', 'anger', 'fear', 'neutral']; // List of emotions
+    $totalMessages = 0; // Initialize total messages count
+
+    // Calculate total messages count by summing up all emotion counters
+    foreach ($emotions as $emotion) {
+        $totalMessages += get_option('ai_chatbot_emotion_count_' . $emotion, 0);
+    }
 
     echo '<div class="row">'; // Bootstrap row for a responsive grid layout
+
+    // Display total messages card
+    echo '<div class="col-md-4 mb-4">';
+    echo '<div class="card bg-primary text-white">'; // Added bg-primary and text-white classes
+    echo '<div class="card-body text-left">';
+    echo '<p class="card-text" style="font-size: 2em;">' . $totalMessages . '</p>';
+    echo '<h5 class="card-title">Total Messages</h5>';
+    echo '</div>'; // Close card-body
+    echo '</div>'; // Close card
+    echo '</div>'; // Close column
+
+    // Continue with displaying each emotion counter
     foreach ($emotions as $emotion) {
         $counter = get_option('ai_chatbot_emotion_count_' . $emotion, 0); // Get the count for each emotion
 
@@ -584,5 +603,14 @@ add_action('admin_menu', 'ai_chatbot_add_admin_menu');
 add_filter('the_content', 'automatic_integration_callback');
 
 add_action('admin_init', 'ai_chatbot_settings_init');
+
+function exclude_files_from_wp_rocket( $excluded_files ) {
+    $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/ai-chatbot.js';
+    $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/ai-chatbot-style.css';
+    return $excluded_files;
+}
+
+add_filter( 'rocket_exclude_js', 'exclude_files_from_wp_rocket' );
+add_filter( 'rocket_exclude_css', 'exclude_files_from_wp_rocket' );
 
 ?>
