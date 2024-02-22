@@ -4,6 +4,11 @@
     --chatbot-primary-opacity: 1; /* Default opacity */
 }
 
+#sessionsChart {
+    width: 200px;
+    height: 200px;
+}
+
 .my-plugin-settings {
     font-family: Arial, sans-serif;
     padding: 20px;
@@ -66,8 +71,43 @@
 }
 
 .card.total-messages { /* Assuming you add 'total-messages' class to your card */
-    background-color: blue !important; /* Use !important to override Bootstrap styles if necessary */
+    background-color: #0018F9 !important; /* Use !important to override Bootstrap styles if necessary */
     color: white !important;
+}
+
+.ai-chatbot-admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* This helps in evenly distributing column widths */
+}
+
+.ai-chatbot-admin-table th,
+.ai-chatbot-admin-table td {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ddd; /* Adds a subtle line between rows for better readability */
+}
+
+.ai-chatbot-admin-table th {
+    background-color: #0018F9;
+    color: #ffffff;
+}
+
+.ai-chatbot-admin-table tr:nth-child(even) {
+    background-color: #f2f2f2; /* Zebra striping for rows */
+}
+
+.ai-chatbot-admin-table tr:hover {
+    background-color: #ddd; /* Highlight row on hover for better interaction feedback */
+}
+
+.ai-chatbot-admin-link {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.ai-chatbot-admin-link:hover {
+    text-decoration: underline;
 }
 
 /* Style for the chat conversation area */

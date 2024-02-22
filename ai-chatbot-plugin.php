@@ -11,6 +11,10 @@ function myplugin_enqueue_admin_dark_mode_style()
     wp_enqueue_style('myplugin-admin-dark-mode', plugins_url('admin-dark-mode.css', __FILE__));
 }
 add_action('admin_enqueue_scripts', 'myplugin_enqueue_admin_dark_mode_style', 100);
+function ai_chatbot_enqueue_admin_styles() {
+    wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
+}
+add_action('admin_enqueue_scripts', 'ai_chatbot_enqueue_admin_styles');
 
 function myplugin_enqueue_bootstrap() {
     // Enqueue Bootstrap CSS
@@ -18,6 +22,8 @@ function myplugin_enqueue_bootstrap() {
     
     // Enqueue Bootstrap JS
     wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js', array('jquery'), null, true);
+    wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', array(), null, true);
+    
 }
 add_action('admin_enqueue_scripts', 'myplugin_enqueue_bootstrap');
 
@@ -52,12 +58,48 @@ $ai_chatbot_questions = array(
  * @param string $bot_message The bot's response to be added to the chat history.
  * @return void
  */
-function update_chat_history($user_message, $bot_message)
-{
-    // Create associative array with $user_message and $bot_message and append in to chat history
-    $_SESSION['chat_history'][] = array("user" => $user_message, "bot" => $bot_message);
-    if (count($_SESSION['chat_history']) > 10) {
-        array_shift($_SESSION['chat_history']);
+function update_chat_history($user_message, $bot_message) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ai_chatbot_conversations';
+    
+    // Assume session_id is available. Generate or retrieve it accordingly.
+    $session_id = session_id(); // Example, use actual logic to generate/retrieve session ID.
+    
+    // Define file path in the WordPress uploads directory
+    $upload_dir = wp_upload_dir();
+    $file_name = $session_id . '.txt';
+    $file_path = $upload_dir['basedir'] . '/ai_chatbot_conversations/' . $file_name;
+    
+    // Ensure the directory exists
+    if (!file_exists($upload_dir['basedir'] . '/ai_chatbot_conversations')) {
+        wp_mkdir_p($upload_dir['basedir'] . '/ai_chatbot_conversations');
+    }
+    
+    // Append the current conversation to the file
+    $conversation_content = "User: $user_message\nBot: $bot_message\n";
+    file_put_contents($file_path, $conversation_content, FILE_APPEND);
+    
+    // Save or update the file URL in the database
+    $file_url = $upload_dir['baseurl'] . '/ai_chatbot_conversations/' . $file_name;
+    
+    // Check if a record already exists for this session_id, update if it does, insert if it doesn't
+    $exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE session_id = %s", $session_id));
+    if ($exists > 0) {
+        // Update existing record
+        $wpdb->update(
+            $table_name,
+            ['conversation' => $file_url], // new value
+            ['session_id' => $session_id] // condition
+        );
+    } else {
+        // Insert new record
+        $wpdb->insert(
+            $table_name,
+            [
+                'session_id' => $session_id,
+                'conversation' => $file_url
+            ]
+        );
     }
 }
 
@@ -403,11 +445,17 @@ function ai_chatbot_settings_page() {
         <div id="ai-chatbot-admin-container">
             <!-- Nav tabs -->
             <ul class="nav nav-tabs" id="aiChatbotTabs" role="tablist">
+                
+                <li class="nav-item">
+                    <a class="nav-link" id="custom-questions-tab" data-toggle="tab" href="#customQuestions" role="tab" aria-controls="customQuestions" aria-selected="false">Custom Questions</a>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link active" id="emotion-counters-tab" data-toggle="tab" href="#emotionCounters" role="tab" aria-controls="emotionCounters" aria-selected="true">Emotion Counters</a>
                 </li>
+                
                 <li class="nav-item">
-                    <a class="nav-link" id="custom-questions-tab" data-toggle="tab" href="#customQuestions" role="tab" aria-controls="customQuestions" aria-selected="false">Custom Questions</a>
+                 <a class="nav-link" id="conversations-tab" data-toggle="tab" href="#conversations" role="tab" aria-controls="conversations" aria-selected="false">Conversations</a>
                 </li>
             </ul>
 
@@ -415,6 +463,7 @@ function ai_chatbot_settings_page() {
             <div class="tab-content" style="margin-top: 20px;">
                 <div class="tab-pane fade show active" id="emotionCounters" role="tabpanel" aria-labelledby="emotion-counters-tab">
                     <?php display_emotion_counters_admin(); ?>
+                    <?php display_sessions_chart(); // Call the function here ?>
                 </div>
                 <div class="tab-pane fade" id="customQuestions" role="tabpanel" aria-labelledby="custom-questions-tab">
                     <form method="post" action="options.php">
@@ -425,12 +474,37 @@ function ai_chatbot_settings_page() {
                         ?>
                     </form>
                 </div>
+                <div class="tab-pane fade" id="conversations" role="tabpanel" aria-labelledby="conversations-tab">
+                 <?php display_conversations_admin(); ?>
+                </div>
             </div>
         </div>
     </div>
     <?php
 }
 
+function display_conversations_admin() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ai_chatbot_conversations';
+
+    // Fetch conversations from the database
+    $conversations = $wpdb->get_results("SELECT * FROM $table_name ORDER BY date_time DESC");
+
+    // Start the table and use custom CSS class for styling
+    echo '<table class="ai-chatbot-admin-table">'; // Updated class name
+    echo '<thead><tr><th>User ID</th><th>Date</th><th>Conversation File</th></tr></thead>';
+    echo '<tbody>';
+    foreach ($conversations as $conversation) {
+        echo '<tr>';
+        // Display each column
+        echo '<td>' . esc_html($conversation->session_id) . '</td>';
+        echo '<td>' . esc_html($conversation->date_time) . '</td>';
+        // Update the link to use the custom CSS class
+        echo '<td><a href="' . esc_url($conversation->conversation) . '" target="_blank" class="ai-chatbot-admin-link">Download Conversation</a></td>';
+        echo '</tr>';
+    }
+    echo '</tbody></table>';
+}
 function ai_chatbot_settings_init()
 {
     register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_enabled');
@@ -568,8 +642,77 @@ function display_emotion_counters_admin() {
         echo '</div>'; // Close column
     }
     echo '</div>'; // Close row
+    echo '<h3>Sessions Chart</h3>';
+    echo '<div class="card">';
+    echo '<div class="card-body text-left">';
+    echo '<div style="width:auto; height:auto;">'; // Adjusted for dynamic sizing
+    echo '<canvas id="sessionsChart"></canvas>';
+    echo '</div>';
+    echo '</div>'; // Close card-body
+    echo '</div>'; // Close card
+}
+function ai_chatbot_create_conversations_table() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'ai_chatbot_conversations';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE $table_name (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        session_id VARCHAR(255) NOT NULL,
+        date_time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        conversation LONGTEXT NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+
+    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    dbDelta( $sql );
 }
 
+function get_sessions_data_last_7_days() {
+    global $wpdb;
+    // Example query, adjust according to your actual data storage and structure
+    $results = $wpdb->get_results("
+        SELECT DATE_FORMAT(date_time, '%Y-%m-%d') AS session_date, COUNT(*) AS session_count
+        FROM {$wpdb->prefix}ai_chatbot_conversations
+        WHERE date_time >= CURDATE() - INTERVAL 7 DAY
+        GROUP BY session_date
+        ORDER BY session_date ASC
+    ", ARRAY_A);
+
+    return $results;
+}
+
+function display_sessions_chart() {
+    $session_data = get_sessions_data_last_7_days();
+    echo "<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('sessionsChart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'bar', // Change this from 'line' to 'bar'
+                data: {
+                    labels: " . json_encode(array_column($session_data, 'session_date')) . ",
+                    datasets: [{
+                        label: 'Sessions',
+                        data: " . json_encode(array_column($session_data, 'session_count')) . ",
+                        fill: false,
+                        backgroundColor: 'rgb(75, 192, 192)', // Used for bar color
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true // Ensures the scale starts at zero
+                        }
+                    }
+                }
+            });
+        });
+    </script>";
+}
+
+register_activation_hook( __FILE__, 'ai_chatbot_create_conversations_table' );
 function ai_chatbot_image_url_render()
 {
     $options = get_option('ai_chatbot_image_url');
