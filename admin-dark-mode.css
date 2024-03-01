@@ -14,7 +14,7 @@
 #ai-chatbot-admin-container #adminmenu,
 #ai-chatbot-admin-container #wpcontent,
 #ai-chatbot-admin-container #wpfooter {
-    background-color: #04041A;
+    background-color: #fafafa;
 }
 
 #ai-chatbot-admin-container #wpadminbar {
@@ -41,6 +41,207 @@
 #ai-chatbot-admin-container #adminmenu li>a.menu-top:focus {
     background-color: #1abc9c;
 }
+/* Container for the navigation to ensure alignment and spacing */
+.ai-chatbot-header {
+    display: flex;
+    justify-content: space-between; /* Updated to space between items */
+    align-items: center;
+    padding-right: 40px;
+    padding-left: 40px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    background: white; /* Adjust if needed */
+    border-radius: 20px; /* Container's border-radius */
+    margin-bottom: 20px; /* Space below the header */
+}
+
+.ai-chatbot-box {
+    display: block;
+    width: 100%;
+    justify-content: space-between; /* Updated to space between items */
+    align-items: center;
+    padding-right: 40px;
+    padding-left: 40px;
+    padding-top: 20px;
+    background: white; /* Adjust if needed */
+    border-radius: 20px; /* Container's border-radius */
+}
+
+.row
+{
+    padding: 20px
+}
+
+#ai-chatbot-admin-container #wpbody-content {
+    background-color: #E9ECEF; /* Sets the background to light gray */
+}
+
+.ai-chatbot-logo {
+    margin-right: auto; /* Pushes the logo to the left */
+    display: flex;
+    width: auto; /* Let the width adjust automatically */
+    height: 40px;
+}
+
+/* Style adjustments for the button group */
+#aiChatbotTabs {
+    display: flex; /* Make the tabs flex container */
+}
+
+#aiChatbotTabs .nav-item {
+    display: inline-block;
+    flex: 1; /* Make each item take up equal space */
+}
+
+#aiChatbotTabs .nav-link {
+    background-color: transparent; /* Default background for inactive tabs */
+    color: #7749F8; /* Purple text for inactive tabs */
+    border: 1px solid #7749F8; /* Purple border for all tabs */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-family: Inter, sans-serif;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s; /* Smooth transition for hover states */
+    border-radius: 0; /* Removes individual border-radius */
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+/* Ensures that only the leftmost and rightmost tabs have rounded corners */
+#aiChatbotTabs .nav-item:first-child .nav-link {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-right-width: 0;
+}
+
+#aiChatbotTabs .nav-item:last-child .nav-link {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-left-width: 0;
+    margin-right: 0;
+}
+.emotion-card {
+    display: flex;
+    height: 100%;
+    padding: 2rem 1.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    flex: 1 0 0;
+    border-radius: 1.25rem;
+    border: 1px solid var(--Secondary-Light-Color, #ABB5BE);
+    background: #FFF;
+    margin: 0px;
+}
+
+.total-card {
+    display: flex;
+    height: 100%;
+    padding: 2rem 1.5rem;
+    align-items: flex-start; /* Align items to the bottom */
+    justify-content: flex-end; /* Justify items to the left */
+    flex: 1 0 0;
+    border-radius: 1.25rem;
+    background: #5227CC;
+    margin: 0px;
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Change from 'left' to 'flex-start' */
+    align-items: flex-start; /* Change from 'left' to 'flex-start' */
+    align-self: stretch;
+    padding: 0;
+}
+
+.total-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Change from 'left' to 'flex-start' */
+    align-items: flex-start; /* Change from 'left' to 'flex-start' */
+    align-self: stretch;
+    padding: 0;
+}
+
+.emotion-name-group {
+    display: flex;
+    padding: 0.5rem 1.25rem;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0.3125rem;
+    background: #FFE69C;
+    margin-bottom: 1.5em
+}
+
+.emotion-name {
+    margin: 0; /* Reset default margin */
+}
+.emotion-count {
+    text-align: left;
+    /* Bold / H2 Heading */
+    font-family: Inter;
+    font-size: 2rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+    box-sizing: content-box;
+    margin: 0%
+}
+
+.total-count {
+    text-align: left;
+    /* Bold / H2 Heading */
+    font-family: Inter;
+    font-size: 2rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+    box-sizing: content-box;
+    margin: 0%
+}
+
+.emotion-messages {
+    text-align: center;
+    font-family: Inter;
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    box-sizing: content-box;
+    margin-bottom: 0
+}
+
+.total-message {
+    text-align: center;
+    font-family: Inter;
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    box-sizing: content-box;
+    margin-bottom: 0
+}
+
+.number-messages-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Hover and active states */
+#aiChatbotTabs .nav-link:hover {
+    background-color: #5227CC50; /* Purple background for active/hover tabs */
+    color: #5227CC; /* White text for active/hover tabs */
+    border: 1px solid #5227CC; /* Ensures border color matches the background */
+}
+#aiChatbotTabs .nav-link.active {
+    background-color: #5227CC; /* Purple background for active/hover tabs */
+    color: #FFFFFF; /* White text for active/hover tabs */
+    border: 1px solid #5227CC; /* Ensures border color matches the background */
+}
 
 #ai-chatbot-admin-container #adminmenu .wp-submenu,
 #ai-chatbot-admin-container #adminmenu .wp-has-current-submenu .wp-submenu,
@@ -60,7 +261,6 @@
 #ai-chatbot-admin-container .postbox {
     background-color: #34495e;
     border-color: #1abc9c;
-    margin-bottom: 20px; /* Consistent spacing between widgets */
     padding: 20px; /* Internal padding for widgets */
 }
 

@@ -6,6 +6,8 @@
  * Author: Tiago Aragona & Matias Piña
  */
 
+session_start();
+
 function myplugin_enqueue_admin_dark_mode_style()
 {
     wp_enqueue_style('myplugin-admin-dark-mode', plugins_url('admin-dark-mode.css', __FILE__));
@@ -23,6 +25,13 @@ function myplugin_enqueue_bootstrap() {
     // Enqueue Bootstrap JS
     wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js', array('jquery'), null, true);
     wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', array(), null, true);
+
+    // Enqueue emotions-chart.js with Chart.js as a dependency
+    wp_enqueue_script('emotions-chart-js', plugins_url('/emotions-chart.js', __FILE__), array('chart-js'), '1.0.0', true);
+
+    // Assume get_last_7_days_emotion_data() fetches the required data
+    $emotion_data = get_last_7_days_emotion_data(); // Make sure this function exists and fetches data correctly
+    wp_localize_script('emotions-chart-js', 'aiChatbotEmotionData', $emotion_data);
     
 }
 add_action('admin_enqueue_scripts', 'myplugin_enqueue_bootstrap');
@@ -142,6 +151,20 @@ function generate_ai_prompt($new_user_input, $custom_info)
  *
  * @return void
  */
+
+ function insert_emotion_data($session_id, $message, $emotion) {
+    global $wpdb;
+    $wpdb->insert(
+        $wpdb->prefix . 'ai_chatbot_emotion_logs',
+        array(
+            'session_id' => $session_id,
+            'message' => $message,
+            'emotion' => $emotion,
+            'date_recorded' => current_time('Y-m-d')
+        ),
+        array('%s', '%s', '%s', '%s')
+    );
+}
 
  function ai_chatbot_enqueue_scripts()
  {
@@ -284,11 +307,18 @@ function ai_chatbot_handle_request()
         // For example, log an error or perform alternative actions
     }
 
+    if ($emotion_category !== false) {
+        // Assuming session_id is properly retrieved or generated.
+        $session_id = session_id(); // Make sure this aligns with your session management logic
+        insert_emotion_data($session_id, $user_message, $emotion_category);
+    }
+
     // Update the chat history with the user's message and the bot's response
     update_chat_history($user_message, $bot_response);
 
     // Send a JSON-encoded success response with just the bot's response
     wp_send_json_success(array('response' => $bot_response));
+    
 }
 
 function perform_emotional_analysis($user_message)
@@ -433,37 +463,120 @@ function categorize_emotion($emotion_text) {
 }
 
 function update_emotion_counters($emotion_category) {
-    $option_name = 'ai_chatbot_emotion_count_' . $emotion_category;
-    $count = get_option($option_name, 0);
-    update_option($option_name, ++$count);
+    // Option name for storing serialized emotion data
+    $option_name = 'ai_chatbot_emotion_daily_' . $emotion_category;
+    $emotion_data = get_option($option_name, array());
+    $today = date('Y-m-d');
+
+    // Check if there's already an entry for today, if not, create or increment
+    if (!array_key_exists($today, $emotion_data)) {
+        $emotion_data[$today] = 1;
+    } else {
+        $emotion_data[$today]++;
+    }
+
+    // Save the updated array back to the options table
+    update_option($option_name, $emotion_data);
+}
+
+function ai_chatbot_create_emotion_logs_table() {
+    global $wpdb;
+    $charset_collate = $wpdb->get_charset_collate();
+    $table_name = $wpdb->prefix . 'ai_chatbot_emotion_logs';
+
+    $sql = "CREATE TABLE $table_name (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        session_id VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        emotion VARCHAR(50) NOT NULL,
+        date_recorded DATE NOT NULL,
+        PRIMARY KEY (id)
+    ) $charset_collate;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+}
+register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
+
+function get_last_7_days_emotion_data() {
+    global $wpdb;
+    $results = $wpdb->get_results("
+        SELECT emotion, date_recorded, COUNT(*) as count
+        FROM {$wpdb->prefix}ai_chatbot_emotion_logs
+        WHERE date_recorded >= CURDATE() - INTERVAL 7 DAY
+        GROUP BY date_recorded, emotion
+        ORDER BY date_recorded ASC, emotion ASC
+    ", ARRAY_A);
+    
+    // Initialize the structure for aiChatbotEmotionData
+    $formattedData = [
+        'labels' => [],
+        'emotions' => [
+            'happiness' => [],
+            'sadness' => [],
+            'anger' => [],
+            'fear' => [],
+            'neutral' => []
+        ]
+    ];
+
+    // Populate the structure
+    foreach ($results as $result) {
+        $date = $result['date_recorded'];
+        $emotion = $result['emotion'];
+        $count = $result['count'];
+
+        // Ensure all dates are accounted for in labels
+        if (!in_array($date, $formattedData['labels'])) {
+            foreach ($formattedData['emotions'] as &$emotionCounts) {
+                $emotionCounts[] = 0; // Initialize missing dates with 0 count
+            }
+            $formattedData['labels'][] = $date;
+        }
+
+        // Update the count for the specific emotion on the specific date
+        $index = array_search($date, $formattedData['labels']);
+        if ($index !== false) {
+            $formattedData['emotions'][$emotion][$index] = $count;
+        }
+    }
+
+    // Return the structured data
+    return $formattedData;
 }
 
 function ai_chatbot_settings_page() {
     ?>
     <div class="wrap">
-        <h1>AI ChatBot Settings</h1>
-        <div id="ai-chatbot-admin-container">
+        <div id="ai-chatbot-admin-container" style="background-color: #FAFAFA;">
+        <div class="ai-chatbot-content" style="padding-left: 100px; padding-right: 100px; padding-top: 50px; padding-bottom: 50px;">
             <!-- Nav tabs -->
-            <ul class="nav nav-tabs" id="aiChatbotTabs" role="tablist">
-                
-                <li class="nav-item">
-                    <a class="nav-link" id="custom-questions-tab" data-toggle="tab" href="#customQuestions" role="tab" aria-controls="customQuestions" aria-selected="false">Custom Questions</a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link active" id="emotion-counters-tab" data-toggle="tab" href="#emotionCounters" role="tab" aria-controls="emotionCounters" aria-selected="true">Emotion Counters</a>
-                </li>
-                
-                <li class="nav-item">
-                 <a class="nav-link" id="conversations-tab" data-toggle="tab" href="#conversations" role="tab" aria-controls="conversations" aria-selected="false">Conversations</a>
-                </li>
-            </ul>
+            <div class="ai-chatbot-header">
+                <div class="ai-chatbot-logo">
+                    <!-- Place your logo HTML or image tag here -->
+                    <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/elogo.png" alt="Echos Logo">
+                </div>
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" id="aiChatbotTabs" role="tablist">
+                    <li class="nav-item">
+                    <a class="nav-link" id="custom-questions-tab" data-toggle="tab" href="#customQuestions" role="tab" aria-controls="customQuestions" aria-selected="false">Settings</a>
+                    </li>
+                    <li class="nav-item">
+                    <a class="nav-link active" id="emotion-counters-tab" data-toggle="tab" href="#emotionCounters" role="tab" aria-controls="emotionCounters" aria-selected="true">Analytics</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="conversations-tab" data-toggle="tab" href="#conversations" role="tab" aria-controls="conversations" aria-selected="false">Conversations</a>
+                    </li>
+                </ul>
+            </div>
 
             <!-- Tab panes -->
             <div class="tab-content" style="margin-top: 20px;">
                 <div class="tab-pane fade show active" id="emotionCounters" role="tabpanel" aria-labelledby="emotion-counters-tab">
                     <?php display_emotion_counters_admin(); ?>
                     <?php display_sessions_chart(); // Call the function here ?>
+                    <?php display_emotions_chart(); // Call the function here ?>
+                    
                 </div>
                 <div class="tab-pane fade" id="customQuestions" role="tabpanel" aria-labelledby="custom-questions-tab">
                     <form method="post" action="options.php">
@@ -478,6 +591,7 @@ function ai_chatbot_settings_page() {
                  <?php display_conversations_admin(); ?>
                 </div>
             </div>
+        </div>
         </div>
     </div>
     <?php
@@ -584,6 +698,43 @@ function ai_chatbot_openai_api_key_render()
     <input type='text' name='ai_chatbot_openai_api_key' value='<?php echo esc_attr($options); ?>' size='50'>
     <?php
 }
+function get_emotion_chart_data() {
+    $emotion_data = get_last_7_days_emotion_data(); // Assume this returns data correctly
+    $chart_data = [
+        'labels' => [], // For storing dates
+        'datasets' => [] // For storing emotion data
+    ];
+
+    // Initialize datasets array with emotion types
+    $emotions = ['happiness', 'sadness', 'anger', 'fear', 'neutral'];
+    foreach ($emotions as $emotion) {
+        $chart_data['datasets'][$emotion] = array_fill(0, 7, 0); // Initialize with zeros for 7 days
+    }
+
+    // Assume $emotion_data is an array of arrays with 'emotion', 'date_recorded', and 'count'
+    foreach ($emotion_data as $data) {
+        $date = $data['date_recorded'];
+        $emotion = $data['emotion'];
+        $count = $data['count'];
+
+        // Ensure the date is in the labels array
+        if (!in_array($date, $chart_data['labels'])) {
+            $chart_data['labels'][] = $date;
+        }
+
+        // Update the count for the specific emotion and date
+        $date_index = array_search($date, $chart_data['labels']);
+        $chart_data['datasets'][$emotion][$date_index] = $count;
+    }
+
+    return $chart_data;
+}
+
+function display_emotions_chart() {
+    $chart_data = get_emotion_chart_data();
+    wp_localize_script('emotions-chart-js', 'emotionChartData', $chart_data);
+}
+add_action('admin_enqueue_scripts', 'display_emotions_chart');
 
 function ai_chatbot_question_render($args)
 {
@@ -606,50 +757,87 @@ function ai_chatbot_settings_section_callback()
 {
     echo __('Answer the following questions to customize your AI ChatBot.', 'wordpress');
 }
+
+
 function display_emotion_counters_admin() {
+    $emotion_colors = array(
+        'happiness' => '#FFE69C',
+        'sadness' => '#9EEAF9',
+        'anger' => '#F8D7DA',
+        'fear' => '#A6E9D5',
+        'neutral' => '#E9ECEF',
+        // Add more emotions and their colors as needed
+    );    
     $emotions = ['happiness', 'sadness', 'anger', 'fear', 'neutral']; // List of emotions
     $totalMessages = 0; // Initialize total messages count
+
+    // Start of the box for emotion counters
+    echo '<div class="ai-chatbot-box mb-4">'; 
+    echo '<div class="row">'; // Bootstrap row for a responsive grid layout of emotion counters
 
     // Calculate total messages count by summing up all emotion counters
     foreach ($emotions as $emotion) {
         $totalMessages += get_option('ai_chatbot_emotion_count_' . $emotion, 0);
     }
 
-    echo '<div class="row">'; // Bootstrap row for a responsive grid layout
-
-    // Display total messages card
-    echo '<div class="col-md-4 mb-4">';
-    echo '<div class="card bg-primary text-white">'; // Added bg-primary and text-white classes
-    echo '<div class="card-body text-left">';
-    echo '<p class="card-text" style="font-size: 2em;">' . $totalMessages . '</p>';
-    echo '<h5 class="card-title">Total Messages</h5>';
-    echo '</div>'; // Close card-body
-    echo '</div>'; // Close card
-    echo '</div>'; // Close column
-
     // Continue with displaying each emotion counter
     foreach ($emotions as $emotion) {
-        $counter = get_option('ai_chatbot_emotion_count_' . $emotion, 0); // Get the count for each emotion
-
-        // Display each emotion counter within a Bootstrap card
-        echo '<div class="col-md-4 mb-4">'; // Bootstrap column with margins for spacing
-        echo '<div class="card">'; // Bootstrap card for styling
-        echo '<div class="card-body text-left">'; // Card body with text centered
-        echo '<p class="card-text" style="font-size: 2em;">' . $counter . '</p>'; // Display the counter in a large font size
-        echo '<h5 class="card-title">' . ucfirst($emotion) . '</h5>'; // Display the emotion name
+        $counter = get_option('ai_chatbot_emotion_count_' . $emotion, 0);
+        
+        // Get the color for the current emotion from the associative array
+        $emotion_color = isset($emotion_colors[$emotion]) ? $emotion_colors[$emotion] : '#FFFFFF'; // Default color if not found
+        
+        echo '<div class="col-md-4 mb-4">';
+        echo '<div class="emotion-card card">';
+        echo '<div class="card-body">';
+        // Group for emotion name
+        echo '<div class="emotion-name-group" style="background-color: ' . $emotion_color . ';">';
+        echo '<h5 class="emotion-name">' . ucfirst($emotion) . '</h5>';
+        echo '</div>';
+        // Group for number and messages
+        echo '<div class="number-messages-group">';
+        echo '<p class="emotion-count">' . $counter . '</p>';
+        echo '<p class="emotion-messages">Messages</p>';
+        echo '</div>'; // Close number-messages-group
         echo '</div>'; // Close card-body
-        echo '</div>'; // Close card
+        echo '</div>'; // Close emotion-card
         echo '</div>'; // Close column
     }
-    echo '</div>'; // Close row
-    echo '<h3>Sessions Chart</h3>';
-    echo '<div class="card">';
-    echo '<div class="card-body text-left">';
-    echo '<div style="width:auto; height:auto;">'; // Adjusted for dynamic sizing
-    echo '<canvas id="sessionsChart"></canvas>';
-    echo '</div>';
-    echo '</div>'; // Close card-body
-    echo '</div>'; // Close card
+        // Display total messages card
+        echo '<div class="col-md-4 mb-4">';
+        echo '<div class="total-card card">';
+        echo '<div class="total-body">';
+        // Group for number and messages
+        echo '<div class="number-messages-group">';
+        echo '<p class="total-count" style="color: white;">' . $totalMessages . '</p>';
+        echo '<p class="total-message" style="color: white;">Total Messages</p>';
+        echo '</div>'; // Close number-messages-group
+        echo '</div>'; // Close card-body
+        echo '</div>'; // Close emotion-card
+        echo '</div>'; // Close column
+    
+    echo '</div>'; // Close row for emotion counters
+    echo '</div>'; // Close the box for emotion counters
+
+    echo '<div class="row">'; // Bootstrap row for aligning charts horizontally
+
+    // Box for the Sessions Chart
+    echo '<div class="col-md-6">'; // Half-width column for the first chart
+    echo '<div class="ai-chatbot-box">'; // Apply styling to the Sessions Chart box
+    echo '<h3>Sessions Chart</h3>'; // Title on top
+    echo '<canvas id="sessionsChart"></canvas>'; // Chart below the title
+    echo '</div>'; // Close the box for the Sessions Chart
+    echo '</div>'; // Close the column for the Sessions Chart
+    
+    // Box for the Emotions Chart
+    echo '<div class="col-md-6">'; // Half-width column for the second chart
+    echo '<div class="ai-chatbot-box">'; // Apply styling to the Emotions Chart box
+    echo '<h3>Emotion Analysis Chart</h3>'; // Title on top
+    echo '<canvas id="emotionsChart"></canvas>'; // Chart below the title
+    echo '</div>'; // Close the box for the Emotions Chart
+    echo '</div>'; // Close the column for the Emotions Chart
+    
+    echo '</div>'; // Close the row for charts
 }
 function ai_chatbot_create_conversations_table() {
     global $wpdb;
@@ -726,8 +914,6 @@ function ai_chatbot_primary_color_render()
     $color = get_option('ai_chatbot_primary_color', '#007bff'); // Default blue color
     echo '<input type="color" name="ai_chatbot_primary_color" value="' . esc_attr($color) . '">';
 }
-
-session_start();
 
 if (!isset($_SESSION['chat_history'])) {
     $_SESSION['chat_history'] = array();

@@ -5,8 +5,10 @@
 }
 
 #sessionsChart {
-    width: 200px;
-    height: 200px;
+    max-width: 400px; /* Adjust the width as needed */
+    height: auto; /* Keeps the aspect ratio intact */
+    display: block; /* Corrects any inline behavior */
+    margin: 0 auto; /* Optional: Centers the chart if its container is wider */
 }
 
 .my-plugin-settings {
