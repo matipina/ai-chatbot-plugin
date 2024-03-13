@@ -78,7 +78,10 @@ jQuery(document).ready(function($) {
                 if (data.success && data.data.response) {
                     appendMessage(data.data.response, 'bot-message'); // Append bot response
                 } else {
-                    appendMessage('No response received', 'bot-message');
+                    // Use custom_bot_down_message if provided, else show default message
+                    const errorMessage = aiChatbotSettings.custom_bot_down_message ? aiChatbotSettings.custom_bot_down_message :
+                        'We apologize for the inconvenience, but our chatbot is currently unavailable. Please try again later. Thank you for your patience and understanding.';
+                    appendMessage(errorMessage, 'bot-message');
                 }
             })
             .catch(error => {
