@@ -8,6 +8,11 @@
 
 session_start();
 
+function myplugin_enqueue_font_awesome() {
+    wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+}
+add_action('admin_enqueue_scripts', 'myplugin_enqueue_font_awesome');
+
 function myplugin_enqueue_admin_dark_mode_style()
 {
     wp_enqueue_style('myplugin-admin-dark-mode', plugins_url('admin-dark-mode.css', __FILE__));
@@ -556,7 +561,7 @@ function ai_chatbot_settings_page() {
             <div class="ai-chatbot-header">
                 <div class="ai-chatbot-logo">
                     <!-- Place your logo HTML or image tag here -->
-                    <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/elogo.png" alt="Echos Logo">
+                    <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/echoslogo3@2x.png" alt="Echos Logo">
                 </div>
                 <!-- Nav tabs -->
                 <ul class="nav nav-tabs" id="aiChatbotTabs" role="tablist">
@@ -630,7 +635,7 @@ function display_conversations_admin() {
         echo '<tr>';
         echo '<td>' . esc_html($conversation->session_id) . '</td>';
         echo '<td>' . esc_html($conversation->date_time) . '</td>';
-        echo '<td><a href="' . esc_url($conversation->conversation) . '" class="ai-chatbot-admin-link">Download Conversation</a></td>';
+        echo '<td><a href="' . esc_url($conversation->conversation) . '" class="ai-chatbot-admin-link"><i class="fas fa-arrow-circle-down"></i></i> Download Conversation</a></td>';
         echo '</tr>';
     }
 

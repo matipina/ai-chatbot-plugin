@@ -22,7 +22,11 @@
     margin-bottom: 15px;
 }
 
-
+.my-plugin-settings .question label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
 
 .my-plugin-settings .question input[type="text"] {
     width: 100%;
