@@ -8,6 +8,22 @@
 
 session_start();
 
+function connect_to_remote_database() {
+    $host = '35.202.30.145'; // e.g., '127.0.0.1' or 'your_instance_ip'
+    $username = 'root'; // Your database username
+    $password = 'ru9j#l"EY:\|hR7_'; // Your database password
+    $database = 'chatbot_database'; // Your remote database name
+    
+    $connection = new mysqli($host, $username, $password, $database);
+
+    // Check connection
+    if ($connection->connect_error) {
+        die("Connection failed: " . $connection->connect_error);
+    }
+
+    return $connection;
+}
+
 function myplugin_enqueue_font_awesome() {
     wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 }
@@ -74,44 +90,51 @@ $ai_chatbot_questions = array(
  */
 function update_chat_history($user_message, $bot_message) {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'ai_chatbot_conversations';
+    $table_name = $wpdb->prefix . 'sessions';
     
     // Assume session_id is available. Generate or retrieve it accordingly.
     $session_id = session_id(); // Example, use actual logic to generate/retrieve session ID.
     
+    // Capture the user's IP address
+    $user_ip = $_SERVER['REMOTE_ADDR'];
+
     // Define file path in the WordPress uploads directory
     $upload_dir = wp_upload_dir();
     $file_name = $session_id . '.txt';
-    $file_path = $upload_dir['basedir'] . '/ai_chatbot_conversations/' . $file_name;
+    $file_path = $upload_dir['basedir'] . '/sessions/' . $file_name;
     
     // Ensure the directory exists
-    if (!file_exists($upload_dir['basedir'] . '/ai_chatbot_conversations')) {
-        wp_mkdir_p($upload_dir['basedir'] . '/ai_chatbot_conversations');
+    if (!file_exists($upload_dir['basedir'] . '/sessions')) {
+        wp_mkdir_p($upload_dir['basedir'] . '/sessions');
     }
     
     // Append the current conversation to the file
     $conversation_content = "User: $user_message\nBot: $bot_message\n";
     file_put_contents($file_path, $conversation_content, FILE_APPEND);
     
-    // Save or update the file URL in the database
-    $file_url = $upload_dir['baseurl'] . '/ai_chatbot_conversations/' . $file_name;
+    // Save or update the file URL and user IP in the database
+    $file_url = $upload_dir['baseurl'] . '/sessions/' . $file_name;
     
     // Check if a record already exists for this session_id, update if it does, insert if it doesn't
     $exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE session_id = %s", $session_id));
     if ($exists > 0) {
-        // Update existing record
+        // Update existing record to include user_ip
         $wpdb->update(
             $table_name,
-            ['conversation' => $file_url], // new value
+            [
+                'conversation' => $file_url, // new value
+                'user_ip' => $user_ip // include user_ip here
+            ], 
             ['session_id' => $session_id] // condition
         );
     } else {
-        // Insert new record
+        // Insert new record including user_ip
         $wpdb->insert(
             $table_name,
             [
                 'session_id' => $session_id,
-                'conversation' => $file_url
+                'conversation' => $file_url,
+                'user_ip' => $user_ip // include user_ip here
             ]
         );
     }
@@ -160,12 +183,12 @@ function generate_ai_prompt($new_user_input, $custom_info)
  function insert_emotion_data($session_id, $message, $emotion) {
     global $wpdb;
     $wpdb->insert(
-        $wpdb->prefix . 'ai_chatbot_emotion_logs',
+        $wpdb->prefix . 'messages',
         array(
             'session_id' => $session_id,
             'message' => $message,
             'emotion' => $emotion,
-            'date_recorded' => current_time('Y-m-d')
+            'created_at' => current_time('Y-m-d H:i:s')
         ),
         array('%s', '%s', '%s', '%s')
     );
@@ -489,15 +512,16 @@ function update_emotion_counters($emotion_category) {
 function ai_chatbot_create_emotion_logs_table() {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
-    $table_name = $wpdb->prefix . 'ai_chatbot_emotion_logs';
+    $table_name = $wpdb->prefix . 'messages';
 
     $sql = "CREATE TABLE $table_name (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         session_id VARCHAR(255) NOT NULL,
         message TEXT NOT NULL,
         emotion VARCHAR(50) NOT NULL,
-        date_recorded DATE NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
         PRIMARY KEY (id)
+        FOREIGN KEY (sessionId) REFERENCES sessions(sessionId)
     ) $charset_collate;";
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -508,11 +532,11 @@ register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
 function get_last_7_days_emotion_data() {
     global $wpdb;
     $results = $wpdb->get_results("
-        SELECT emotion, date_recorded, COUNT(*) as count
-        FROM {$wpdb->prefix}ai_chatbot_emotion_logs
-        WHERE date_recorded >= CURDATE() - INTERVAL 7 DAY
-        GROUP BY date_recorded, emotion
-        ORDER BY date_recorded ASC, emotion ASC
+        SELECT emotion, created_at, COUNT(*) as count
+        FROM {$wpdb->prefix}messages
+        WHERE created_at >= CURDATE() - INTERVAL 7 DAY
+        GROUP BY created_at, emotion
+        ORDER BY created_at ASC, emotion ASC
     ", ARRAY_A);
     
     // Initialize the structure for aiChatbotEmotionData
@@ -529,7 +553,7 @@ function get_last_7_days_emotion_data() {
 
     // Populate the structure
     foreach ($results as $result) {
-        $date = $result['date_recorded'];
+        $date = $result['created_at'];
         $emotion = $result['emotion'];
         $count = $result['count'];
 
@@ -602,7 +626,7 @@ function ai_chatbot_settings_page() {
 
 function display_conversations_admin() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'ai_chatbot_conversations';
+    $table_name = $wpdb->prefix . 'sessions';
 
     // Pagination setup
     $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
@@ -712,7 +736,7 @@ function fetch_conversations() {
     $per_page = 10;
     $offset = ($current_page - 1) * $per_page;
 
-    $table_name = $wpdb->prefix . 'ai_chatbot_conversations';
+    $table_name = $wpdb->prefix . 'sessions';
     $conversations = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name ORDER BY date_time DESC LIMIT %d OFFSET %d", $per_page, $offset));
 
     $html = '<table class="ai-chatbot-admin-table">';
@@ -828,9 +852,9 @@ function get_emotion_chart_data() {
         $chart_data['datasets'][$emotion] = array_fill(0, 7, 0); // Initialize with zeros for 7 days
     }
 
-    // Assume $emotion_data is an array of arrays with 'emotion', 'date_recorded', and 'count'
+    // Assume $emotion_data is an array of arrays with 'emotion', 'created_at', and 'count'
     foreach ($emotion_data as $data) {
-        $date = $data['date_recorded'];
+        $date = $data['created_at'];
         $emotion = $data['emotion'];
         $count = $data['count'];
 
@@ -880,7 +904,7 @@ function get_sessions_data_current_week() {
     // Example query, adjust according to your actual data storage and structure
     $results = $wpdb->get_results("
         SELECT DATE(date_time) AS session_date, COUNT(*) AS session_count
-        FROM {$wpdb->prefix}ai_chatbot_conversations
+        FROM {$wpdb->prefix}sessions
         WHERE date_time BETWEEN '$start_of_week' AND '$end_of_week'
         GROUP BY session_date
         ORDER BY session_date ASC
@@ -990,14 +1014,15 @@ function display_emotion_counters_admin() {
 }
 function ai_chatbot_create_conversations_table() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'ai_chatbot_conversations';
+    $table_name = $wpdb->prefix . 'sessions';
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE $table_name (
         id mediumint(9) NOT NULL AUTO_INCREMENT,
         session_id VARCHAR(255) NOT NULL,
-        date_time DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
         conversation LONGTEXT NOT NULL,
+        user_ip VARCHAR(45) NOT NULL, /* Support for IPv6 */
         PRIMARY KEY  (id)
     ) $charset_collate;";
 
@@ -1010,7 +1035,7 @@ function get_sessions_data_last_7_days() {
     // Example query, adjust according to your actual data storage and structure
     $results = $wpdb->get_results("
         SELECT DATE_FORMAT(date_time, '%Y-%m-%d') AS session_date, COUNT(*) AS session_count
-        FROM {$wpdb->prefix}ai_chatbot_conversations
+        FROM {$wpdb->prefix}sessions
         WHERE date_time >= CURDATE() - INTERVAL 7 DAY
         GROUP BY session_date
         ORDER BY session_date ASC

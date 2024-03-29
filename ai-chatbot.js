@@ -4,14 +4,37 @@ jQuery(document).ready(function($) {
         let r = parseInt(hex.slice(1, 3), 16),
             g = parseInt(hex.slice(3, 5), 16),
             b = parseInt(hex.slice(5, 7), 16);
-
         return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     }
 
-    // Set chatbot image placeholder and minimized chatbot image if the URL is provided
+    // Trigger start chat session AJAX call
+    function startChatSession() {
+        $.ajax({
+            url: aiChatbotSettings.ajaxurl, // Ensure ajaxurl is defined in your PHP and passed to JS
+            method: 'POST',
+            data: {
+                action: 'start_chat_session', // This should match with your PHP AJAX action
+            },
+            success: function(response) {
+                if (response && response.success) {
+                    console.log('Chat session started:', response.data.sessionId);
+                    localStorage.setItem('aiChatbotSessionId', response.data.sessionId);
+                } else {
+                    console.error('Failed to start chat session');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Start chat session failed:', error);
+            }
+        });
+    }
+
+    // Call to start the chat session
+    startChatSession();
+
+    // Existing functionality to update chatbot appearance based on settings
     const chatbotImagePlaceholder = document.querySelector('.chatbot-image-placeholder');
     let chatbotMinimized = document.querySelector('.chatbot-minimized');
-
     if (aiChatbotSettings.image_url) {
         if (chatbotImagePlaceholder) {
             chatbotImagePlaceholder.style.backgroundImage = `url('${aiChatbotSettings.image_url}')`;
@@ -21,13 +44,11 @@ jQuery(document).ready(function($) {
         }
     }
 
-    // Update primary color for chatbot elements and user messages
     if (aiChatbotSettings.primary_color) {
         const root = document.documentElement;
         root.style.setProperty('--chatbot-primary-color', aiChatbotSettings.primary_color);
-
         const userMessageColor = hexToRGBA(aiChatbotSettings.primary_color, 0.3); // 30% opacity
-        document.querySelectorAll('.user-message').forEach(function (message) {
+        document.querySelectorAll('.user-message').forEach(function(message) {
             message.style.backgroundColor = userMessageColor;
         });
     }
@@ -38,13 +59,11 @@ jQuery(document).ready(function($) {
     const chatbotContainer = document.getElementById('ai-chatbot');
     const chatbotToggle = document.getElementById('chatbot-toggle');
 
-    // Initialize chatbot in minimized state if chatbotMinimized is defined
     if (chatbotMinimized) {
         chatbotContainer.classList.add('minimized');
         chatbotMinimized.style.display = 'block'; // Show the minimized icon by default
     }
 
-    // Function to append messages to the chat conversation
     function appendMessage(text, className) {
         const messageElement = document.createElement('div');
         messageElement.className = 'ai-chatbot-message ' + className;
@@ -58,27 +77,26 @@ jQuery(document).ready(function($) {
         }
     }
 
-    // Event listener for chat form submission
     chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const message = chatInput.value.trim();
+        const sessionId = localStorage.getItem('aiChatbotSessionId');
 
         if (message) {
-            appendMessage(message, 'user-message'); // Append user message
+            appendMessage(message, 'user-message');
 
             fetch(aiChatbotSettings.ajaxurl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
                 },
-                body: 'action=ai_chatbot_handle_request&message=' + encodeURIComponent(message),
+                body: `action=ai_chatbot_handle_request&message=${encodeURIComponent(message)}&sessionId=${encodeURIComponent(sessionId)}`,
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.data.response) {
-                    appendMessage(data.data.response, 'bot-message'); // Append bot response
+                    appendMessage(data.data.response, 'bot-message');
                 } else {
-                    // Use custom_bot_down_message if provided, else show default message
                     const errorMessage = aiChatbotSettings.custom_bot_down_message ? aiChatbotSettings.custom_bot_down_message :
                         'We apologize for the inconvenience, but our chatbot is currently unavailable. Please try again later. Thank you for your patience and understanding.';
                     appendMessage(errorMessage, 'bot-message');
@@ -88,19 +106,16 @@ jQuery(document).ready(function($) {
                 appendMessage('Error: ' + error.message, 'bot-message');
             });
 
-            chatInput.value = ''; // Clear input field
+            chatInput.value = ''; // Clear input field after sending
         }
     });
 
-    // Event listener to handle chatbot minimization
     chatbotToggle.addEventListener('click', function() {
-        chatbotContainer.classList.add('minimized');
-        if (chatbotMinimized) {
-            chatbotMinimized.style.display = 'block'; // Ensure this only executes if chatbotMinimized is defined
-        }
+        chatbotContainer.classList.toggle('minimized');
+        chatbotMinimized.style.display = chatbotContainer.classList.contains('minimized') ? 'block' : 'none';
     });
 
-    // Check again before adding the event listener in case the element was dynamically added
+    // Re-check in case the chatbotMinimized was dynamically added
     chatbotMinimized = document.querySelector('.chatbot-minimized');
     if (chatbotMinimized) {
         chatbotMinimized.addEventListener('click', function() {
