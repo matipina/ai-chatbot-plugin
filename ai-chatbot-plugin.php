@@ -1,12 +1,16 @@
 <?php
 /**
  * Plugin Name: AI Chatbot
- * Description: A WordPress plugin for integrating an AI Chatbot using OpenAI's API.
+ * Description: A WordPress plugin for integrating an AI Chatbot using gemini's API.
  * Version: 1.0.0
  * Author: Tiago Aragona & Matias Piña
  */
 
 session_start();
+
+require_once __DIR__ . '/vendor/autoload.php';
+use GeminiAPI\Client;
+use GeminiAPI\Resources\Parts\TextPart;
 
 function connect_to_remote_database() {
     $host = '35.202.30.145'; // e.g., '127.0.0.1' or 'your_instance_ip'
@@ -231,11 +235,11 @@ function generate_ai_prompt($new_user_input, $custom_info)
  
 
 /**
- * Handles the AI Chatbot request, processes user input, and communicates with the OpenAI API.
+ * Handles the AI Chatbot request, processes user input, and communicates with the gemini API.
  *
  * This function is responsible for managing AI Chatbot requests. It checks if the AI Chatbot is enabled,
- * retrieves custom information from settings, processes user input, communicates with the OpenAI API,
- * and updates the chat history. The response from the OpenAI API is sent back as a JSON-encoded success
+ * retrieves custom information from settings, processes user input, communicates with the gemini API,
+ * and updates the chat history. The response from the gemini API is sent back as a JSON-encoded success
  * or error message.
  *
  * @return void
@@ -266,79 +270,42 @@ function ai_chatbot_handle_request()
             $custom_info .= $question . " " . $answer . " ";
         } else {
             // If there's no answer, add default message
-            $custom_info .= $question . "There is no information available.";
+            $custom_info .= $question . "There is no information available. ";
         }
     }
 
     // Process user input
     $user_message = isset($_POST['message']) ? sanitize_text_field($_POST['message']) : '';
 
-    // Retrieve OpenAI API key
-    $openai_api_key = get_option('ai_chatbot_openai_api_key');
-    if (!$openai_api_key) {
-        wp_send_json_error(array('error' => 'OpenAI API Key is missing'));
+    // Retrieve Gemini API key
+    $gemini_api_key = get_option('ai_chatbot_gemini_api_key'); // Ensure you have this option available
+    if (!$gemini_api_key) {
+        wp_send_json_error(array('error' => 'Gemini API Key is missing'));
         return;
     }
 
-    // Generate prompt for the OpenAI API
+    // Initialize Gemini API Client
+
+    $client = new Client($gemini_api_key);
+
     $prompt = generate_ai_prompt($user_message, $custom_info);
-
-    // OpenAI API URL
-    $openai_url = 'https://api.openai.com/v1/chat/completions';
-
-    // Prepare data for the API request
-    $data = array(
-        'model' => 'gpt-3.5-turbo', // Specify the model here
-        'messages' => array(
-            array(
-                'role' => 'system',
-                'content' => $prompt
-
-            ),
-            array(
-                'role' => 'user',
-                'content' => $user_message
-            )
-        ),
-        'temperature' => 0.7,
-        'max_tokens' => 150
+    
+    // Generate response using Gemini API
+    $response = $client->geminiPro()->generateContent(
+        new TextPart($prompt),
     );
 
-    // Make a POST request to the OpenAI API
-    $response = wp_remote_post($openai_url, array(
-        'headers' => array(
-            'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . $openai_api_key
-        ),
-        'body' => json_encode($data),
-        'method' => 'POST',
-        'data_format' => 'body',
-    ));
-
-    // Check for API request errors
-    if (is_wp_error($response)) {
-        wp_send_json_error(array('error' => 'Failed to connect to OpenAI API'));
-        return;
-    }
-
-    // Decode the API response and extract the bot's response
-    $body = json_decode(wp_remote_retrieve_body($response), true);
-    $bot_response = $body['choices'][0]['message']['content'];
+    $bot_response = $response->text(); // Assuming the text() method retrieves the response text
 
     // Perform emotional analysis on the user's message
     $emotion_category = perform_emotional_analysis($user_message);
     if ($emotion_category !== false) {
         // Emotion analysis successful, handle accordingly
-        // For example, update emotional analysis counters or perform additional actions based on the emotion category
-        update_emotion_counters($emotion_category); // Assuming you have a function to update emotion counters
-    } else {
-        // Emotion analysis failed, handle accordingly
-        // For example, log an error or perform alternative actions
+        update_emotion_counters($emotion_category);
     }
 
     if ($emotion_category !== false) {
-        // Assuming session_id is properly retrieved or generated.
-        $session_id = session_id(); // Make sure this aligns with your session management logic
+        $session_id = session_id();
         insert_emotion_data($session_id, $user_message, $emotion_category);
     }
 
@@ -347,7 +314,6 @@ function ai_chatbot_handle_request()
 
     // Send a JSON-encoded success response with just the bot's response
     wp_send_json_success(array('response' => $bot_response));
-    
 }
 
 function perform_emotional_analysis($user_message)
@@ -357,63 +323,45 @@ function perform_emotional_analysis($user_message)
         return false; // Skip the analysis to avoid double counting
     }
 
-    // Retrieve OpenAI API key
-    $openai_api_key = get_option('ai_chatbot_openai_api_key');
-    if (!$openai_api_key) {
+    // Retrieve Gemini API key
+    $gemini_api_key = get_option('ai_chatbot_gemini_api_key'); // Keep the variable name for the API key
+    if (!$gemini_api_key) {
         return false; // Return false indicating failure
     }
 
     // Define the prompt for emotional analysis
-    $emotion_analysis_prompt = "Analyze the emotion of the following message: \"$user_message\". Answer only one word: Answer only one word: happiness, sadness, anger, fear, neutral";
+    $emotion_analysis_prompt = "Analyze the emotion of the following message: \"$user_message\". Answer only one word: happiness, sadness, anger, fear, neutral";
 
-    // Prepare data for the emotional analysis request
-    $emotion_analysis_data = array(
-        'model' => 'gpt-3.5-turbo', // Keep using the same model for consistency
-        'messages' => array(
-            array(
-                'role' => 'system',
-                'content' => $emotion_analysis_prompt
-            ),
-            array(
-                'role' => 'user',
-                'content' => $user_message // Just the last message for emotion analysis
-            )
-        ),
-        'temperature' => 0.7,
-        'max_tokens' => 60
+    // Initialize Gemini API Client with the API key
+    $client = new Client($gemini_api_key); // Assume a generic client initialization for the Gemini API
+
+    // Prepare the prompt for emotional analysis request using the predefined prompt and user message
+    // This part might vary depending on how you usually prepare your prompts for Gemini API
+    $prompt = $emotion_analysis_prompt; // Directly using the emotional analysis prompt
+
+    // Generate response using Gemini API
+    $response = $client->geminiPro()->generateContent(
+        new TextPart($prompt),
     );
 
-    // Send a POST request to the OpenAI API for emotional analysis
-    $emotion_response = wp_remote_post('https://api.openai.com/v1/chat/completions', array(
-        'headers' => array(
-            'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . $openai_api_key
-        ),
-        'body' => json_encode($emotion_analysis_data),
-        'method' => 'POST',
-        'data_format' => 'body',
-    ));
+    // Assuming the text() method retrieves the response text
+    $emotion_text = $response->text();
 
-    // Check for errors in the API response
-    if (!is_wp_error($emotion_response)) {
-        // Decode the API response
-        $emotion_body = json_decode(wp_remote_retrieve_body($emotion_response), true);
-
-        // Extract the emotional analysis text
-        $emotion_text = $emotion_body['choices'][0]['message']['content'];
-
+    // Check if we received a valid response
+    if (!empty($emotion_text)) {
         // Categorize the emotion based on the response
-        $emotion_category = categorize_emotion($emotion_text);
+        $emotion_category = categorize_emotion($emotion_text); // Assuming this function parses the one-word emotion from the response
 
         // After performing emotional analysis successfully,
         // set a session flag to prevent duplicate analysis
         $_SESSION['emotion_analysis_done'] = true;
 
-        return $emotion_category; // Return the emotion category
+        return $emotion_category; // Return the categorized emotion
     }
 
     return false; // Return false indicating failure
 }
+
 
 /**
  * Callback function for automatically integrating the AI Chatbot into post or page content.
@@ -641,7 +589,7 @@ function display_conversations_admin() {
     $total_pages = ceil($total / $per_page);
 
     // Fetch limited conversations for the current page
-    $conversations = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name ORDER BY date_time DESC LIMIT %d OFFSET %d", $per_page, $offset));
+    $conversations = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name ORDER BY created_at DESC LIMIT %d OFFSET %d", $per_page, $offset));
     
     // Start output for conversations
     echo '<div class="ai-chatbot-box">';
@@ -658,7 +606,7 @@ function display_conversations_admin() {
     foreach ($conversations as $conversation) {
         echo '<tr>';
         echo '<td>' . esc_html($conversation->session_id) . '</td>';
-        echo '<td>' . esc_html($conversation->date_time) . '</td>';
+        echo '<td>' . esc_html($conversation->created_at) . '</td>';
         echo '<td><a href="' . esc_url($conversation->conversation) . '" class="ai-chatbot-admin-link"><i class="fas fa-arrow-circle-down"></i></i> Download Conversation</a></td>';
         echo '</tr>';
     }
@@ -737,7 +685,20 @@ function fetch_conversations() {
     $offset = ($current_page - 1) * $per_page;
 
     $table_name = $wpdb->prefix . 'sessions';
-    $conversations = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name ORDER BY date_time DESC LIMIT %d OFFSET %d", $per_page, $offset));
+    $query = $wpdb->prepare("SELECT * FROM $table_name ORDER BY created_at DESC LIMIT %d OFFSET %d", $per_page, $offset);
+    $conversations = $wpdb->get_results($query);
+
+    // Debugging output
+    error_log('SQL Query: ' . $query);
+    error_log('Returned rows: ' . count($conversations));
+    if ($wpdb->last_error) {
+        error_log('SQL Error: ' . $wpdb->last_error);
+    }
+
+    if (empty($conversations)) {
+        echo '<p>No conversations found.</p>';
+        wp_die();
+    }
 
     $html = '<table class="ai-chatbot-admin-table">';
     $html .= '<thead><tr><th>User ID</th><th>Date</th><th>Conversation File</th></tr></thead>';
@@ -746,7 +707,7 @@ function fetch_conversations() {
     foreach ($conversations as $conversation) {
         $html .= '<tr>';
         $html .= '<td>' . esc_html($conversation->session_id) . '</td>';
-        $html .= '<td>' . esc_html($conversation->date_time) . '</td>';
+        $html .= '<td>' . esc_html($conversation->created_at) . '</td>';
         $html .= '<td><a href="' . esc_url($conversation->conversation) . '" class="ai-chatbot-admin-link">Download Conversation</a></td>';
         $html .= '</tr>';
     }
@@ -758,10 +719,11 @@ function fetch_conversations() {
     wp_die();
 }
 
+
 function ai_chatbot_settings_init()
 {
     register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_enabled');
-    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_openai_api_key');
+    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_gemini_api_key');
     register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_image_url');
     register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_primary_color');
     register_setting('ai_chatbot_plugin_settings', 'chatbot_name');
@@ -799,9 +761,9 @@ function ai_chatbot_settings_init()
     );
 
     add_settings_field(
-        'ai_chatbot_openai_api_key',
-        __('OpenAI API Key', 'wordpress'),
-        'ai_chatbot_openai_api_key_render',
+        'ai_chatbot_gemini_api_key',
+        __('Gemini API Key', 'wordpress'),
+        'ai_chatbot_gemini_api_key_render',
         'ai_chatbot_plugin_settings',
         'ai_chatbot_plugin_settings_section'
     );
@@ -832,11 +794,11 @@ function ai_chatbot_enabled_render()
     <?php
 }
 
-function ai_chatbot_openai_api_key_render()
+function ai_chatbot_gemini_api_key_render()
 {
-    $options = get_option('ai_chatbot_openai_api_key');
+    $options = get_option('ai_chatbot_gemini_api_key');
     ?>
-    <input type='text' name='ai_chatbot_openai_api_key' value='<?php echo esc_attr($options); ?>' size='50'>
+    <input type='text' name='ai_chatbot_gemini_api_key' value='<?php echo esc_attr($options); ?>' size='50'>
     <?php
 }
 function get_emotion_chart_data() {
@@ -903,9 +865,9 @@ function get_sessions_data_current_week() {
     
     // Example query, adjust according to your actual data storage and structure
     $results = $wpdb->get_results("
-        SELECT DATE(date_time) AS session_date, COUNT(*) AS session_count
+        SELECT DATE(created_at) AS session_date, COUNT(*) AS session_count
         FROM {$wpdb->prefix}sessions
-        WHERE date_time BETWEEN '$start_of_week' AND '$end_of_week'
+        WHERE created_at BETWEEN '$start_of_week' AND '$end_of_week'
         GROUP BY session_date
         ORDER BY session_date ASC
     ", ARRAY_A);
@@ -931,6 +893,19 @@ function get_sessions_data_current_week() {
 
     return $session_data;
 }
+function handle_start_chat_session() {
+    // Check if a session is already started
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    // Here, you can set any session variables or perform other actions needed to start the chat session
+    // For now, let's just return the session ID as a success response
+
+    wp_send_json_success(array('message' => 'Chat session started', 'sessionId' => session_id()));
+}
+add_action('wp_ajax_start_chat_session', 'handle_start_chat_session'); // For logged-in users
+add_action('wp_ajax_nopriv_start_chat_session', 'handle_start_chat_session'); // For logged-out users
 
 
 function display_emotion_counters_admin() {
@@ -1034,9 +1009,9 @@ function get_sessions_data_last_7_days() {
     global $wpdb;
     // Example query, adjust according to your actual data storage and structure
     $results = $wpdb->get_results("
-        SELECT DATE_FORMAT(date_time, '%Y-%m-%d') AS session_date, COUNT(*) AS session_count
+        SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS session_date, COUNT(*) AS session_count
         FROM {$wpdb->prefix}sessions
-        WHERE date_time >= CURDATE() - INTERVAL 7 DAY
+        WHERE created_at >= CURDATE() - INTERVAL 7 DAY
         GROUP BY session_date
         ORDER BY session_date ASC
     ", ARRAY_A);
@@ -1046,67 +1021,46 @@ function get_sessions_data_last_7_days() {
 
 function display_sessions_chart() {
     $session_data = get_sessions_data_current_week();
-    
-    // Convert date keys to abbreviated day names
     $formatted_labels = array_map(function($day) {
         return date('D', strtotime($day));
     }, array_keys($session_data));
 
+    $data_for_chart = [
+        'labels' => $formatted_labels,
+        'datasets' => [[
+            'label' => 'Sessions',
+            'data' => array_values($session_data),
+            'fill' => false,
+            'backgroundColor' => 'rgb(82, 39, 204)',
+            'borderColor' => 'rgb(75, 192, 192)',
+            'tension' => 0.1,
+            'barPercentage' => 0.5,
+            'categoryPercentage' => 0.8,
+            'borderRadius' => ['topLeft' => 20, 'topRight' => 20],
+        ]]
+    ];
+
     echo "<script>
     document.addEventListener('DOMContentLoaded', function() {
-        var container = document.querySelector('.ai-chatbot-box');
         var ctxSessions = document.getElementById('sessionsChart').getContext('2d');
-        
-        // Calculate the maximum height based on the available space within the container
-        var maxHeight = container.offsetHeight;
-        // Set the canvas height to fit well within the container
-        ctxSessions.canvas.height = maxHeight;
-
-        var chartSessions = new Chart(ctxSessions, {
-            type: 'bar', // Change this from 'line' to 'bar'
-            data: {
-                labels: " . json_encode($formatted_labels) . ",
-                datasets: [{
-                    label: 'Sessions',
-                    data: " . json_encode(array_values($session_data)) . ",
-                    fill: false,
-                    backgroundColor: 'rgb(82, 39, 204)', // Used for bar color
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1,
-                    barPercentage: 0.5, // Adjust the width of the bars (0.5 = 50% of available space)
-                    categoryPercentage: 0.8, // Adjust the width of the category (0.8 = 80% of available space)
-                    borderRadius: {
-                        topLeft: 20,
-                        topRight: 20
-                    }
-                }]
-            },
+        var chartData = " . json_encode($data_for_chart) . ";
+        new Chart(ctxSessions, {
+            type: 'bar',
+            data: chartData,
             options: {
                 scales: {
-                    y: {
-                        beginAtZero: true // Ensures the scale starts at zero
-                    }
+                    y: { beginAtZero: true }
                 },
-                layout: {
-                    padding: {
-                        top: 20, // Adjust the top padding as needed
-                        bottom: 20, // Adjust the bottom padding as needed
-                    }
-                },
+                layout: { padding: { top: 20, bottom: 20 } },
                 responsive: true,
-                maintainAspectRatio: false, // Prevent the chart from maintaining aspect ratio
-                plugins: {
-                    legend: {
-                        display: false // Hide the legend
-                    }
-                }
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
             }
         });
-
-        // You can similarly create the emotions chart here
     });
-</script>";
+    </script>";
 }
+
 
 register_activation_hook( __FILE__, 'ai_chatbot_create_conversations_table' );
 function ai_chatbot_image_url_render()
