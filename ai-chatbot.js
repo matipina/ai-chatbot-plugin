@@ -19,6 +19,7 @@ jQuery(document).ready(function($) {
                 if (response && response.success) {
                     console.log('Chat session started:', response.data.sessionId);
                     localStorage.setItem('aiChatbotSessionId', response.data.sessionId);
+                    displayDefaultMessage();
                 } else {
                     console.error('Failed to start chat session');
                 }
@@ -29,6 +30,11 @@ jQuery(document).ready(function($) {
         });
     }
 
+    function displayDefaultMessage() {
+        const defaultMessage = aiChatbotSettings.defaultMessage; // Get the default message from settings
+        appendMessage(defaultMessage, 'bot-message');  // Display this as the default message
+    }
+   
     // Call to start the chat session
     startChatSession();
 

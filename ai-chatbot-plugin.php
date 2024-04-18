@@ -220,6 +220,7 @@ function generate_ai_prompt($new_user_input, $custom_info)
         'ajaxurl' => admin_url('admin-ajax.php'), // AJAX URL for WordPress
         'image_url' => get_option('ai_chatbot_image_url'), // Pass the image URL
         'primary_color' => get_option('ai_chatbot_primary_color', '#007bff'), // Default blue color
+        'defaultMessage' => get_option('ai_chatbot_default_message', 'Hello! I\'m here to help you. What can I do for you today?'),
         'custom_bot_down_message' => get_option('custom_bot_down_message') // Custom bot down message
     );
 
@@ -479,12 +480,15 @@ register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
 
 function get_last_7_days_emotion_data() {
     global $wpdb;
+    $table_name = $wpdb->prefix . 'messages';
+
+    // Adjusted query to group results by day and emotion
     $results = $wpdb->get_results("
-        SELECT emotion, created_at, COUNT(*) as count
-        FROM {$wpdb->prefix}messages
+        SELECT emotion, DATE(created_at) as day, COUNT(*) as count
+        FROM $table_name
         WHERE created_at >= CURDATE() - INTERVAL 7 DAY
-        GROUP BY created_at, emotion
-        ORDER BY created_at ASC, emotion ASC
+        GROUP BY DATE(created_at), emotion
+        ORDER BY DATE(created_at) ASC, emotion ASC
     ", ARRAY_A);
     
     // Initialize the structure for aiChatbotEmotionData
@@ -499,30 +503,42 @@ function get_last_7_days_emotion_data() {
         ]
     ];
 
-    // Populate the structure
+    // Initialize empty arrays for each day and emotion to ensure all days are covered
+    $existingDates = [];
     foreach ($results as $result) {
-        $date = $result['created_at'];
-        $emotion = $result['emotion'];
-        $count = $result['count'];
-
-        // Ensure all dates are accounted for in labels
-        if (!in_array($date, $formattedData['labels'])) {
-            foreach ($formattedData['emotions'] as &$emotionCounts) {
-                $emotionCounts[] = 0; // Initialize missing dates with 0 count
+        if (!in_array($result['day'], $existingDates)) {
+            $existingDates[] = $result['day'];
+            // Ensure every emotion is initialized for this date
+            foreach ($formattedData['emotions'] as $emotionKey => &$counts) {
+                $counts[$result['day']] = 0;
             }
-            $formattedData['labels'][] = $date;
-        }
-
-        // Update the count for the specific emotion on the specific date
-        $index = array_search($date, $formattedData['labels']);
-        if ($index !== false) {
-            $formattedData['emotions'][$emotion][$index] = $count;
         }
     }
 
-    // Return the structured data
+    // Sort dates to maintain chronological order
+    sort($existingDates);
+    $formattedData['labels'] = $existingDates;
+
+    // Populate the structure with actual counts
+    foreach ($results as $result) {
+        $date = $result['day'];
+        $emotion = $result['emotion'];
+        $count = $result['count'];
+        $formattedData['emotions'][$emotion][$date] = $count;
+    }
+
+    // Normalize the counts array to match the sorted labels
+    foreach ($formattedData['emotions'] as $emotion => &$countsArray) {
+        $newCounts = [];
+        foreach ($formattedData['labels'] as $label) {
+            $newCounts[] = $countsArray[$label];
+        }
+        $formattedData['emotions'][$emotion] = $newCounts;
+    }
+
     return $formattedData;
 }
+
 
 function ai_chatbot_settings_page() {
     ?>
@@ -728,6 +744,7 @@ function ai_chatbot_settings_init()
     register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_primary_color');
     register_setting('ai_chatbot_plugin_settings', 'chatbot_name');
     register_setting('ai_chatbot_plugin_settings', 'custom_bot_down_message');
+    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_default_message');
 
     add_settings_section(
         'ai_chatbot_plugin_settings_section',
@@ -768,6 +785,14 @@ function ai_chatbot_settings_init()
         'ai_chatbot_plugin_settings_section'
     );
 
+    add_settings_field(
+        'ai_chatbot_default_message',
+        __('Default Introductory Message', 'wordpress'),
+        'ai_chatbot_default_message_render',
+        'ai_chatbot_plugin_settings',
+        'ai_chatbot_plugin_settings_section'
+    );
+
     global $ai_chatbot_questions;
     foreach ($ai_chatbot_questions as $index => $question) {
         register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_question_' . ($index + 1));
@@ -786,6 +811,16 @@ function ai_chatbot_settings_init()
     }
 }
 
+function custom_bot_down_message_render() {
+    $options = get_option('custom_bot_down_message');
+    echo "<input type='text' name='custom_bot_down_message' value='" . esc_attr($options) . "' size='50'>";
+}
+
+function ai_chatbot_default_message_render() {
+    $options = get_option('ai_chatbot_default_message');
+    echo "<input type='text' name='ai_chatbot_default_message' value='" . esc_attr($options) . "' size='50'>";
+}
+
 function ai_chatbot_enabled_render()
 {
     $options = get_option('ai_chatbot_enabled');
@@ -802,36 +837,48 @@ function ai_chatbot_gemini_api_key_render()
     <?php
 }
 function get_emotion_chart_data() {
-    $emotion_data = get_last_7_days_emotion_data(); // Assume this returns data correctly
+    $emotion_data = get_last_7_days_emotion_data(); // This function needs to return data correctly
     $chart_data = [
-        'labels' => [], // For storing dates
-        'datasets' => [] // For storing emotion data
+        'labels' => [], // For storing unique dates
+        'datasets' => [] // For storing emotion data per day
     ];
 
     // Initialize datasets array with emotion types
     $emotions = ['happiness', 'sadness', 'anger', 'fear', 'neutral'];
     foreach ($emotions as $emotion) {
-        $chart_data['datasets'][$emotion] = array_fill(0, 7, 0); // Initialize with zeros for 7 days
+        $chart_data['datasets'][$emotion] = [];
     }
 
-    // Assume $emotion_data is an array of arrays with 'emotion', 'created_at', and 'count'
+    // Process each data point to aggregate counts by day
     foreach ($emotion_data as $data) {
-        $date = $data['created_at'];
-        $emotion = $data['emotion'];
-        $count = $data['count'];
+        // Convert the timestamp to a date-only string
+        $date = date('Y-m-d', strtotime($data['created_at']));
 
-        // Ensure the date is in the labels array
+        // Initialize the date in the labels array if it's not already there
         if (!in_array($date, $chart_data['labels'])) {
             $chart_data['labels'][] = $date;
+            // Initialize the count for this date in each emotion dataset
+            foreach ($emotions as $emotion) {
+                $chart_data['datasets'][$emotion][$date] = 0;
+            }
         }
 
-        // Update the count for the specific emotion and date
-        $date_index = array_search($date, $chart_data['labels']);
-        $chart_data['datasets'][$emotion][$date_index] = $count;
+        // Add the count to the appropriate date and emotion
+        $chart_data['datasets'][$data['emotion']][$date] += $data['count'];
+    }
+
+    // Ensure the datasets are ordered according to the labels
+    foreach ($emotions as $emotion) {
+        $orderedData = [];
+        foreach ($chart_data['labels'] as $label) {
+            $orderedData[] = $chart_data['datasets'][$emotion][$label] ?? 0;
+        }
+        $chart_data['datasets'][$emotion] = $orderedData;
     }
 
     return $chart_data;
 }
+
 
 function display_emotions_chart() {
     $chart_data = get_emotion_chart_data();
@@ -1102,6 +1149,9 @@ function display_ai_chatbot_settings_form() {
     // Add a new field for the down message
     echo '<label for="custom_bot_down_message">Message to show if the bot goes down:</label>';
     echo '<input type="text" id="custom_bot_down_message" name="custom_bot_down_message" value="' . esc_attr(get_option('custom_bot_down_message', 'I am sorry, the chatbot is down for the moment. Try again later!')) . '"/><br/><br/>';
+
+    echo '<label for="ai_chatbot_default_message">Default Introductory Message:</label>';
+    echo '<input type="text" id="ai_chatbot_default_message" name="ai_chatbot_default_message" value="' . esc_attr(get_option('ai_chatbot_default_message', 'Hello! I\'m here to help you. What can I do for you today?')) . '"/><br/><br/>';
 
     echo '<button type="submit" name="submit" id="submit" class="custom-submit-button">Save Changes</button>';
     echo '</form>';
