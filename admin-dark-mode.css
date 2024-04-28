@@ -1,0 +1,386 @@
+/* Import DM Sans font */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans&display=swap');
+
+/* Scoped Styles for AI ChatBot Plugin Admin Page */
+#ai-chatbot-admin-container html, 
+#ai-chatbot-admin-container body.wp-admin {
+    font-family: 'DM Sans', sans-serif; /* DM Sans font */
+    color: #000000; /* All text set to white */
+    font-size: 14px; /* Standard font size */
+}
+
+
+#ai-chatbot-admin-container #wpwrap,
+#ai-chatbot-admin-container #adminmenu,
+#ai-chatbot-admin-container #wpcontent,
+#ai-chatbot-admin-container #wpfooter {
+    background-color: #fafafa;
+}
+
+#ai-chatbot-admin-container #wpadminbar {
+    background-color: #04041A;
+}
+
+#ai-chatbot-admin-container #adminmenu {
+    background-color: #04041A;
+    margin-bottom: 0;
+}
+
+#ai-chatbot-admin-container #adminmenu a {
+    padding: 10px 20px; /* Increased padding for better spacing */
+}
+
+#ai-chatbot-admin-container #adminmenu .wp-not-current-submenu .wp-submenu,
+#ai-chatbot-admin-container .folded #adminmenu .wp-has-current-submenu .wp-submenu {
+    padding: 10px; /* Consistent padding for submenus */
+}
+
+#ai-chatbot-admin-container #adminmenu a:hover,
+#ai-chatbot-admin-container #adminmenu li.menu-top:hover,
+#ai-chatbot-admin-container #adminmenu li.opensub>a.menu-top,
+#ai-chatbot-admin-container #adminmenu li>a.menu-top:focus {
+    background-color: #1abc9c;
+}
+/* Container for the navigation to ensure alignment and spacing */
+.ai-chatbot-header {
+    display: flex;
+    justify-content: space-between; /* Updated to space between items */
+    align-items: center;
+    padding-right: 40px;
+    padding-left: 40px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    background: white; /* Adjust if needed */
+    border-radius: 20px; /* Container's border-radius */
+    margin-bottom: 20px; /* Space below the header */
+}
+
+.ai-chatbot-box {
+    display: block;
+    width: auto;
+    height: 100%;
+    justify-content: space-between; /* Updated to space between items */
+    align-items: center;
+    padding: 40px;
+    background: white; /* Adjust if needed */
+    border-radius: 20px; /* Container's border-radius */
+    
+}
+
+.white-box {
+    display: block;
+    width: auto;
+    height: 100%;
+    justify-content: space-between; /* Updated to space between items */
+    align-items: center;
+    padding: 40px;
+    background: white; /* Adjust if needed */
+    border-radius: 20px; /* Container's border-radius */
+}
+
+.custom-submit-button {
+    display: flex;
+    padding: 0.625rem 1rem;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--Primary-Color-Dark, #5227CC);
+    background: var(--Primary-Color-Dark, #5227CC);
+    color: var(--Default-White, #FFF);
+    text-align: center;
+    font-family: Inter, sans-serif; /* Fallback to sans-serif if Inter is not available */
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 500;
+}
+
+/* Ensure text inside the button adheres to the style */
+.custom-submit-button[type="submit"] {
+    color: var(--Default-White, #FFF); /* For overriding WordPress styles */
+}
+.row
+{
+    padding: 20px
+}
+
+#ai-chatbot-admin-container #wpbody-content {
+    background-color: #E9ECEF; /* Sets the background to light gray */
+}
+
+.ai-chatbot-logo {
+    margin-right: auto; /* Pushes the logo to the left */
+    display: flex;
+    width: auto; /* Let the width adjust automatically */
+    height: 40px;
+}
+
+/* Style adjustments for the button group */
+#aiChatbotTabs {
+    display: flex; /* Make the tabs flex container */
+}
+
+#aiChatbotTabs .nav-item {
+    display: inline-block;
+    flex: 1; /* Make each item take up equal space */
+}
+
+#aiChatbotTabs .nav-link {
+    background-color: transparent; /* Default background for inactive tabs */
+    color: #7749F8; /* Purple text for inactive tabs */
+    border: 1px solid #7749F8; /* Purple border for all tabs */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-family: Inter, sans-serif;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s; /* Smooth transition for hover states */
+    border-radius: 0; /* Removes individual border-radius */
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+/* Ensures that only the leftmost and rightmost tabs have rounded corners */
+#aiChatbotTabs .nav-item:first-child .nav-link {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-right-width: 0;
+}
+
+#aiChatbotTabs .nav-item:last-child .nav-link {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-left-width: 0;
+    margin-right: 0;
+}
+.emotion-card {
+    display: flex;
+    height: 100%;
+    padding: 2rem 1.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    flex: 1 0 0;
+    border-radius: 1.25rem;
+    border: 1px solid var(--Secondary-Light-Color, #ABB5BE);
+    background: #FFF;
+    margin: 0px;
+}
+
+.total-card {
+    display: flex;
+    height: 100%;
+    padding: 2rem 1.5rem;
+    align-items: flex-start; /* Align items to the bottom */
+    justify-content: flex-end; /* Justify items to the left */
+    flex: 1 0 0;
+    border-radius: 1.25rem;
+    background: #5227CC;
+    margin: 0px;
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Change from 'left' to 'flex-start' */
+    align-items: flex-start; /* Change from 'left' to 'flex-start' */
+    align-self: stretch;
+    padding: 0;
+}
+
+.total-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Change from 'left' to 'flex-start' */
+    align-items: flex-start; /* Change from 'left' to 'flex-start' */
+    align-self: stretch;
+    padding: 0;
+}
+
+.chatbot-input {
+    width: 100%; /* Full width */
+    padding: 10px; /* Padding inside the fields */
+    margin-bottom: 20px; /* Space below each field */
+    margin-top: 20px; /* Space above each field - adjust as needed */
+    border: 1px solid #ccc; /* Border around the fields */
+    border-radius: 4px; /* Rounded corners of the fields */
+    font-size: 16px; /* Font size */
+    font-weight: normal; /* Font weight */
+}
+
+.chatbot-input, .chatbot-input[type="text"], .chatbot-input[type="color"], .chatbot-input[type="textarea"] {
+    width: 100%; /* Make input fields full width */
+    padding: 10px; /* Add some padding inside input fields */
+    margin-bottom: 20px; /* Add some space below each field */
+    border: 1px solid #ccc; /* Add a border to the fields */
+    border-radius: 4px; /* Optional: round the corners of the input fields */
+    font-size: 16px; /* Set the font size */
+    font-weight: normal; /* Set the font weight to normal */
+}
+
+
+.ai-chatbot-question .question-number, .ai-chatbot-question .question-text {
+    font-size: 16px; /* Your desired font size */
+    font-weight: normal; /* Normal font weight */
+    color: #333; /* Any specific color you want */
+    margin-bottom: 5px; /* Adjust space below the question text */
+}
+
+
+.emotion-name-group {
+    display: flex;
+    padding: 0.5rem 1.25rem;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0.3125rem;
+    background: #FFE69C;
+    margin-bottom: 1.5em
+}
+
+.emotion-name {
+    margin: 0; /* Reset default margin */
+}
+.emotion-count {
+    text-align: left;
+    /* Bold / H2 Heading */
+    font-family: Inter;
+    font-size: 2rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+    box-sizing: content-box;
+    margin: 0%
+}
+
+.total-count {
+    text-align: left;
+    /* Bold / H2 Heading */
+    font-family: Inter;
+    font-size: 2rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+    box-sizing: content-box;
+    margin: 0%
+}
+
+.emotion-messages {
+    text-align: center;
+    font-family: Inter;
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    box-sizing: content-box;
+    margin-bottom: 0
+}
+
+.total-message {
+    text-align: center;
+    font-family: Inter;
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    box-sizing: content-box;
+    margin-bottom: 0
+}
+
+.number-messages-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Hover and active states */
+#aiChatbotTabs .nav-link:hover {
+    background-color: #5227CC50; /* Purple background for active/hover tabs */
+    color: #5227CC; /* White text for active/hover tabs */
+    border: 1px solid #5227CC; /* Ensures border color matches the background */
+}
+#aiChatbotTabs .nav-link.active {
+    background-color: #5227CC; /* Purple background for active/hover tabs */
+    color: #FFFFFF; /* White text for active/hover tabs */
+    border: 1px solid #5227CC; /* Ensures border color matches the background */
+}
+
+#ai-chatbot-admin-container #adminmenu .wp-submenu,
+#ai-chatbot-admin-container #adminmenu .wp-has-current-submenu .wp-submenu,
+#ai-chatbot-admin-container #adminmenu .wp-has-current-submenu.opensub .wp-submenu,
+#ai-chatbot-admin-container .folded #adminmenu .wp-has-current-submenu .wp-submenu,
+#ai-chatbot-admin-container #adminmenu a.wp-has-current-submenu:focus+.wp-submenu {
+    background: #2c3e50;
+}
+
+#ai-chatbot-admin-container #adminmenu .wp-submenu a,
+#ai-chatbot-admin-container #adminmenu .wp-submenu a:focus, 
+#ai-chatbot-admin-container #adminmenu .wp-submenu a:hover, 
+#ai-chatbot-admin-container #adminmenu .wp-submenu li.current a {
+    background-color: #1abc9c;
+}
+
+#ai-chatbot-admin-container .postbox {
+    background-color: #34495e;
+    border-color: #1abc9c;
+    padding: 20px; /* Internal padding for widgets */
+}
+
+#ai-chatbot-admin-container .postbox h2 {
+    font-size: 16px; /* Heading size for widget titles */
+}
+
+#ai-chatbot-admin-container input[type="text"],
+#ai-chatbot-admin-container input[type="password"],
+#ai-chatbot-admin-container input[type="email"],
+#ai-chatbot-admin-container textarea,
+#ai-chatbot-admin-container select {
+    background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white background */
+    color: #000000; /* Text in inputs set to white for readability */
+    border: 1px solid #000000; /* White border */
+    padding: 8px 10px; /* Increased padding for better visibility */
+    margin-bottom: 10px; /* Consistent spacing between form elements */
+    width: 100%; /* Full width for better layout */
+    box-sizing: border-box; /* Ensures padding doesn't affect width */
+}
+
+#ai-chatbot-admin-container input[type="text"]:focus,
+#ai-chatbot-admin-container input[type="password"]:focus,
+#ai-chatbot-admin-container input[type="email"]:focus,
+#ai-chatbot-admin-container textarea:focus {
+    border-color: #1abc9c; /* Change border color on focus for visibility */
+    box-shadow: 0 0 5px rgba(26, 188, 156, 0.5); /* Adds a glow effect on focus */
+}
+
+#ai-chatbot-admin-container .wp-core-ui .button-primary {
+    background: #1abc9c;
+    border-color: #16a085;
+    text-shadow: none;
+    padding: 8px 15px; /* Larger padding for buttons */
+    margin: 10px 0; /* Space around buttons */
+}
+
+#ai-chatbot-admin-container .wp-core-ui .button-primary:hover,
+#ai-chatbot-admin-container .wp-core-ui .button-primary:focus {
+    background: #16a085;
+    border-color: #14976c;
+}
+
+#ai-chatbot-admin-container .wp-list-table thead {
+    background-color: #34495e;
+}
+
+#ai-chatbot-admin-container #footer-upgrade, 
+#ai-chatbot-admin-container #footer-thankyou {
+    padding-top: 20px; /* Padding for footer */
+}
+
+#ai-chatbot-admin-container .wp-admin .wrap h1, 
+#ai-chatbot-admin-container .wp-admin .wrap h2, 
+#ai-chatbot-admin-container .wp-admin .wrap h3, 
+#ai-chatbot-admin-container .wp-admin .wrap h4, 
+#ai-chatbot-admin-container .wp-admin .wrap h5, 
+#ai-chatbot-admin-container .wp-admin .wrap h6,
+#ai-chatbot-admin-container .wp-admin .form-table th,
+#ai-chatbot-admin-container .wp-admin .form-table label {
+    color: #ffffff; /* Titles set to white */
+}

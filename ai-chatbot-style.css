@@ -1,0 +1,304 @@
+/* General Styles for Plugin Settings Page */
+:root {
+    --chatbot-primary-color: #0018F9; /* Default primary color */
+    --chatbot-primary-opacity: 1; /* Default opacity */
+}
+
+
+.my-plugin-settings {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    margin-top: 20px;
+}
+
+.my-plugin-settings h2 {
+    color: #333;
+}
+
+/* Styles for Each Question */
+.my-plugin-settings .question {
+    margin-bottom: 15px;
+}
+
+.my-plugin-settings .question label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.my-plugin-settings .question input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Styles for Submit Button */
+.my-plugin-settings input[type="submit"] {
+    background-color: var(--chatbot-primary-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.my-plugin-settings input[type="submit"]:hover {
+    background-color: #005a87;
+}
+
+/* Style for the chatbot container */
+#ai-chatbot {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 300px;
+    background-color: white;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    z-index: 1000;
+    padding: 0px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.card.total-messages { /* Assuming you add 'total-messages' class to your card */
+    background-color: #0018F9 !important; /* Use !important to override Bootstrap styles if necessary */
+    color: white !important;
+}
+
+.ai-chatbot-admin-table {
+    width: 100%;
+    margin-bottom: 10px; /* Separation between rows */
+    border-collapse: separate;
+    border-spacing: 0 10px; /* Space between rows */
+}
+
+.ai-chatbot-admin-table th,
+.ai-chatbot-admin-table td {
+    text-align: left;
+    padding: 10px 40px; /* Adjust padding inside cells */
+    border-bottom: none; /* Remove line between rows */
+}
+
+.ai-chatbot-admin-table th {
+    background-color: transparent;
+    color: #222222;
+}
+
+.ai-chatbot-admin-table td {
+    background-color: #fff; /* Box-like background for each cell */
+    padding: 10px 40px; /* Adjust padding inside cells */
+    vertical-align: top; /* Align the content to the top */
+}
+
+.ai-chatbot-admin-table td:first-child {
+    font-weight: bold; /* Keeps first column bold */
+    border-left: 1px solid #ddd; /* Keeps border on the left */
+    border-top: 1px solid #ddd; /* Keeps border on the top */
+    border-bottom: 1px solid #ddd; /* Keeps border on the bottom */
+    border-top-left-radius: 10px; /* Rounds top left corner */
+    border-bottom-left-radius: 10px; /* Rounds bottom left corner */
+}
+
+.ai-chatbot-admin-table td:nth-child(2) {
+    border-top: 1px solid #ddd; /* Keeps border on the top */
+    border-bottom: 1px solid #ddd; /* Keeps border on the bottom */
+}
+
+.ai-chatbot-admin-table td:last-child {
+    border-right: 1px solid #ddd; /* Keeps border on the right */
+    border-top: 1px solid #ddd; /* Keeps border on the top */
+    border-bottom: 1px solid #ddd; /* Keeps border on the bottom */
+    border-top-right-radius: 10px; /* Rounds top right corner */
+    border-bottom-right-radius: 10px; /* Rounds bottom right corner */
+}
+
+/* Ensure the table rows (tr elements) have no extra spacing between them for borders to align correctly */
+.ai-chatbot-admin-table tr {
+    border-collapse: collapse;
+}
+
+.ai-chatbot-admin-table td:first-child {
+    font-weight: bold; /* First column bold */
+}
+
+.ai-chatbot-admin-table td:nth-child(2) {
+    font-weight: normal; /* Second column regular */
+}
+
+.ai-chatbot-admin-table td:nth-child(3) {
+    font-weight: normal; /* Third column regular */
+    color: #6610F2; /* Third column purple text */
+}
+
+.ai-chatbot-admin-link {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.ai-chatbot-admin-link:hover {
+    text-decoration: underline;
+}
+
+/* Style for the chat conversation area */
+#ai-chatbot-conversation {
+    padding: 10px;
+    height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Generic style for chat messages */
+.ai-chatbot-message {
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 15px;
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+/* Style for user messages */
+.user-message {
+    align-self: flex-end;
+    margin-left: 30%;
+}
+
+/* Style for bot messages */
+.bot-message {
+    background-color: #f1f1f1;
+    align-self: flex-start;
+    margin-right: 30%;
+}
+
+/* Style for the chat input form */
+#ai-chatbot-form {
+    margin: 20px;
+    display: flex;
+    align-items: center; /* This aligns the items vertically in the middle */
+    gap: 10px; /* This replaces 'spacing', which is not a valid CSS property for flex containers */
+}
+
+/* Style for the chat input field */
+#ai-chatbot-input {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Style for the send button */
+#ai-chatbot-submit {
+    background-color: var(--chatbot-primary-color);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5x;
+    cursor: pointer;
+}
+
+#ai-chatbot-submit:hover {
+    background-color: var(--chatbot-primary-color);
+    opacity: 0.8;
+}
+
+/* New Styles for Chatbot Header */
+.chatbot-header {
+    background-color: var(--chatbot-primary-color);
+    color: white;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    position: relative; /* Needed for absolute positioning of children */
+}
+
+.chatbot-image-placeholder {
+    background-color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+    background-image: url('BotFace.png'); /* Replace with your image path */
+    background-size: cover; /* Ensures the image covers the entire area */
+    background-position: center; /* Centers the image */
+}
+
+.chatbot-name {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.chatbot-status {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+}
+
+.chatbot-status-dot {
+    height: 5px;
+    width: 5px;
+    background-color: #2DFF54;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.chatbot-status-text {
+    color: white;
+    opacity: 0.5;
+}
+
+/* Style for the minimize button */
+.chatbot-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: white;
+}
+
+/* Styles when the chatbot is minimized */
+#ai-chatbot.minimized {
+    width: 60px; /* Adjust the size as needed */
+    height: 60px; /* Adjust the size as needed */
+    border-radius: 50%;
+    padding: 0;
+    overflow: hidden;
+    background-image: url('BotFace.png'); /* Replace with your image path */
+    background-size: cover; /* Ensures the image covers the entire area */
+    background-position: center; /* Centers the image */
+}
+
+#ai-chatbot.minimized .chatbot-header,
+#ai-chatbot.minimized #ai-chatbot-conversation,
+#ai-chatbot.minimized #ai-chatbot-form,
+#ai-chatbot.minimized .chatbot-toggle {
+    display: none;
+}
+
+/* Style for the separate minimized chatbot icon (if used) */
+.chatbot-minimized {
+    width: 60px; /* Adjust the size as needed */
+    height: 60px; /* Adjust the size as needed */
+    background-image: url('BotFace.png');
+    background-size: cover; /* Ensures the image covers the entire area */
+    background-position: 50% 50%; /* Centers the image */
+    border-radius: 50%;
+    cursor: pointer;
+    display: none; /* Hide the separate icon when minimized */
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
