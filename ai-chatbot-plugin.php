@@ -895,43 +895,34 @@ function ai_chatbot_settings_section_callback()
 
 function get_sessions_data_current_week() {
     global $wpdb;
-    
-    // Get the start and end dates of the current week
-    $start_of_week = date('Y-m-d', strtotime('monday this week'));
-    $end_of_week = date('Y-m-d', strtotime('sunday this week'));
-    
-    // Example query, adjust according to your actual data storage and structure
-    $results = $wpdb->get_results("
+
+    // Calculate the start and end dates of the current week
+    $start_of_week = date('Y-m-d', strtotime('Monday this week')) . ' 00:00:00';
+    $end_of_week = date('Y-m-d', strtotime('Sunday this week')) . ' 23:59:59';
+
+    // SQL query to fetch session counts grouped by day
+    $query = $wpdb->prepare("
         SELECT DATE(created_at) AS session_date, COUNT(*) AS session_count
         FROM {$wpdb->prefix}sessions
-        WHERE created_at BETWEEN '$start_of_week' AND '$end_of_week'
-        GROUP BY session_date
-        ORDER BY session_date ASC
-    ", ARRAY_A);
+        WHERE created_at BETWEEN %s AND %s
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) ASC
+    ", $start_of_week, $end_of_week);
+    $results = $wpdb->get_results($query, ARRAY_A);
 
-    // Create an array with dates of the current week
-    $current_week_dates = array();
-    $current_date = $start_of_week;
-    while ($current_date <= $end_of_week) {
-        $current_week_dates[] = $current_date;
-        $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
+    // Initialize the session data for each day of the current week
+    $session_data = [];
+    for ($date = strtotime($start_of_week); $date <= strtotime($end_of_week); $date += 86400) {
+        $session_data[date('Y-m-d', $date)] = 0;
     }
 
-    // Initialize the result array with zeros for each date
-    $session_data = array();
-    foreach ($current_week_dates as $date) {
-        $session_data[$date] = 0;
-    }
-
-    // Fill in actual session counts where available
+    // Populate the session data with actual counts from the database
     foreach ($results as $row) {
-        $session_data[$row['session_date']] = $row['session_count'];
+        $session_data[$row['session_date']] = (int)$row['session_count'];
     }
 
     return $session_data;
 }
-
-
 
 function display_emotion_counters_admin() {
     global $wpdb;
@@ -1050,36 +1041,37 @@ function display_sessions_chart() {
         'datasets' => [[
             'label' => 'Sessions',
             'data' => array_values($session_data),
-            'fill' => false,
             'backgroundColor' => 'rgb(82, 39, 204)',
             'borderColor' => 'rgb(75, 192, 192)',
-            'tension' => 0.1,
             'barPercentage' => 0.5,
             'categoryPercentage' => 0.8,
             'borderRadius' => ['topLeft' => 20, 'topRight' => 20],
+            'tension' => 0.1
         ]]
     ];
 
     echo "<script>
     document.addEventListener('DOMContentLoaded', function() {
-        var ctxSessions = document.getElementById('sessionsChart').getContext('2d');
-        if (window.myChartInstance) {
-            window.myChartInstance.destroy();
-        }
-        var chartData = " . json_encode($data_for_chart) . ";
-        window.myChartInstance = new Chart(ctxSessions, {
-            type: 'bar',
-            data: chartData,
-            options: {
-                scales: {
-                y: { beginAtZero: true }
-                },
-                layout: { padding: { top: 20, bottom: 20 } },
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } }
+        var ctx = document.getElementById('sessionsChart');
+        if (ctx) {
+            var ctxSessions = ctx.getContext('2d');
+            if (window.myChartInstance) {
+                window.myChartInstance.destroy();
             }
-        });
+            console.log(" . json_encode($data_for_chart) . "); // Log the data for inspection
+            window.myChartInstance = new Chart(ctxSessions, {
+                type: 'bar',
+                data: " . json_encode($data_for_chart) . ",
+                options: {
+                    scales: { y: { beginAtZero: true } },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true } } // Ensure the legend is displayed for debugging
+                }
+            });
+        } else {
+            console.error('SessionsChart element not found');
+        }
     });
     </script>";
 }
