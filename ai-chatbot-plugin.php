@@ -4,44 +4,51 @@
  * Description: A WordPress plugin for generating custom AI Chatbots using Google Gemini API.
  * Version: 0.1.0
  * Author: Tiago Aragona & Matias Piña
- * @package WordPress
  */
 
 
-session_start();
-use GeminiAPI\Client;
-use GeminiAPI\Resources\Parts\TextPart;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-// For logged-in users
-add_action('wp_ajax_start_chat_session', 'handle_start_chat_session');
+use GeminiAPI\Client;
+use GeminiAPI\Resources\Parts\TextPart;
 
-// For not logged-in users
-add_action('wp_ajax_nopriv_start_chat_session', 'handle_start_chat_session');
+$ai_chatbot_questions = array(
+    "Describe your products or services in depth. (Include names, prices, and more)",
+    "What is your business's name? How does it usually communicate with the users?",
+    "What are your most frequently asked questions?",
+    "Can you describe your target audience?",
+    "What are your business hours and location?",
+    "What payment methods do you accept?",
+    "Are there any ongoing promotions or discounts?",
+    "How does your shipping and return process work?",
+    "What guarantees or warranties do you offer?",
+    "How can customers contact you for support?"
+);
 
 function handle_start_chat_session()
 {
     // Your code to handle the request
     wp_send_json_success(array('sessionId' => session_id()));
 }
-
 function myplugin_enqueue_font_awesome()
 {
     wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 }
-add_action('admin_enqueue_scripts', 'myplugin_enqueue_font_awesome');
 
 function myplugin_enqueue_admin_dark_mode_style()
 {
     wp_enqueue_style('myplugin-admin-dark-mode', plugins_url('admin-dark-mode.css', __FILE__));
 }
-add_action('admin_enqueue_scripts', 'myplugin_enqueue_admin_dark_mode_style', 100);
+
 function ai_chatbot_enqueue_admin_styles()
 {
     wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
 }
-add_action('admin_enqueue_scripts', 'ai_chatbot_enqueue_admin_styles');
 
 function myplugin_enqueue_bootstrap()
 {
@@ -60,27 +67,11 @@ function myplugin_enqueue_bootstrap()
     wp_localize_script('emotions-chart-js', 'aiChatbotEmotionData', $emotion_data);
 
 }
-add_action('admin_enqueue_scripts', 'myplugin_enqueue_bootstrap');
 
 function myplugin_enqueue_google_fonts()
 {
     wp_enqueue_style('myplugin-dm-sans-font', 'https://fonts.googleapis.com/css2?family=DM+Sans&display=swap');
 }
-add_action('admin_enqueue_scripts', 'myplugin_enqueue_google_fonts');
-
-$ai_chatbot_questions = array(
-    "Describe your products or services in depth. (Include names, prices, and more)",
-    "What is your business's name? How does it usually communicate with the users?",
-    "What are your most frequently asked questions?",
-    "Can you describe your target audience?",
-    "What are your business hours and location?",
-    "What payment methods do you accept?",
-    "Are there any ongoing promotions or discounts?",
-    "How does your shipping and return process work?",
-    "What guarantees or warranties do you offer?",
-    "How can customers contact you for support?"
-);
-
 
 /**
  * Updates the chat history with a new user and bot message.
@@ -193,7 +184,6 @@ function ai_chatbot_create_conversations_table()
     require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
 }
-register_activation_hook(__FILE__, 'ai_chatbot_create_conversations_table');
 
 function ai_chatbot_create_emotion_logs_table()
 {
@@ -227,8 +217,6 @@ function ai_chatbot_create_emotion_logs_table()
         error_log("Failed to create the table {$table_name}.");
     }
 }
-
-register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
 
 
 /**
@@ -585,7 +573,8 @@ function ai_chatbot_settings_page()
                 <!-- Nav tabs -->
                 <div class="ai-chatbot-header">
                     <div class="ai-chatbot-logo">
-                        <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/assets/echoslogo3@2x.png" alt="Echos Logo">
+                        <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/assets/echoslogo3@2x.png"
+                            alt="Echos Logo">
                     </div>
                     <!-- Nav tabs -->
                     <ul class="nav nav-tabs" id="aiChatbotTabs" role="tablist">
@@ -730,9 +719,6 @@ function display_conversations_admin()
 
     <?php
 }
-// AJAX handler to fetch conversations
-add_action('wp_ajax_fetch_conversations', 'fetch_conversations');
-add_action('wp_ajax_nopriv_fetch_conversations', 'fetch_conversations');
 
 function fetch_conversations()
 {
@@ -904,7 +890,7 @@ function display_emotions_chart()
     $chart_data = get_emotion_chart_data();
     wp_localize_script('emotions-chart-js', 'emotionChartData', $chart_data);
 }
-add_action('admin_enqueue_scripts', 'display_emotions_chart');
+
 
 function ai_chatbot_question_render($args)
 {
@@ -927,25 +913,31 @@ function ai_chatbot_settings_section_callback()
 function get_sessions_data_current_week()
 {
     global $wpdb;
-
+    date_default_timezone_set('America/New_York'); // Adjust to your server's timezone
     // Calculate the start and end dates of the current week
     $start_of_week = date('Y-m-d', strtotime('Monday this week')) . ' 00:00:00';
     $end_of_week = date('Y-m-d', strtotime('Sunday this week')) . ' 23:59:59';
 
     // SQL query to fetch session counts grouped by day
-    $query = $wpdb->prepare("
-        SELECT DATE(created_at) AS session_date, COUNT(*) AS session_count
+    $query = "
+        SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS session_date, COUNT(*) AS session_count
         FROM {$wpdb->prefix}sessions
-        WHERE created_at BETWEEN %s AND %s
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at) ASC
-    ", $start_of_week, $end_of_week);
+        WHERE created_at >= '{$start_of_week}' AND created_at <= '{$end_of_week}'
+        GROUP BY session_date
+        ORDER BY session_date ASC
+    ";
     $results = $wpdb->get_results($query, ARRAY_A);
+    
+    if (empty($results)) {
+        error_log('No results found: ' . $wpdb->last_error);
+        return []; // Return an empty array if no results
+    }
 
     // Initialize the session data for each day of the current week
     $session_data = [];
     for ($date = strtotime($start_of_week); $date <= strtotime($end_of_week); $date += 86400) {
-        $session_data[date('Y-m-d', $date)] = 0;
+        $formatted_date = date('Y-m-d', $date);
+        $session_data[$formatted_date] = 0; // Initialize each day with zero sessions        
     }
 
     // Populate the session data with actual counts from the database
@@ -1128,15 +1120,6 @@ function ai_chatbot_primary_color_render()
     echo '<input type="color" name="ai_chatbot_primary_color" value="' . esc_attr($color) . '">';
 }
 
-if (!isset($_SESSION['chat_history'])) {
-    $_SESSION['chat_history'] = array();
-}
-
-// Hook the ai_chatbot_enqueue_scripts function to the 'wp_enqueue_scripts' action
-add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
-
-add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
-add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 
 function display_ai_chatbot_settings_form()
 {
@@ -1161,12 +1144,6 @@ function display_ai_chatbot_settings_form()
     echo '</div>'; // End of chatbot-box
 }
 
-add_action('admin_menu', 'ai_chatbot_add_admin_menu');
-
-// Hook into the_content filter
-add_filter('the_content', 'automatic_integration_callback');
-
-add_action('admin_init', 'ai_chatbot_settings_init');
 
 function exclude_files_from_wp_rocket($excluded_files)
 {
@@ -1174,6 +1151,51 @@ function exclude_files_from_wp_rocket($excluded_files)
     $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/ai-chatbot-style.css';
     return $excluded_files;
 }
+register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
+register_activation_hook(__FILE__, 'ai_chatbot_create_conversations_table');
+
+session_start();
+
+if (!isset($_SESSION['chat_history'])) {
+    $_SESSION['chat_history'] = array();
+}
+
+// For logged-in users
+add_action('wp_ajax_start_chat_session', 'handle_start_chat_session');
+
+// For not logged-in users
+add_action('wp_ajax_nopriv_start_chat_session', 'handle_start_chat_session');
+
+add_action('admin_enqueue_scripts', 'myplugin_enqueue_font_awesome');
+
+add_action('admin_enqueue_scripts', 'myplugin_enqueue_admin_dark_mode_style', 100);
+add_action('admin_enqueue_scripts', 'ai_chatbot_enqueue_admin_styles');
+add_action('admin_enqueue_scripts', 'myplugin_enqueue_bootstrap');
+add_action('admin_enqueue_scripts', 'myplugin_enqueue_google_fonts');
+
+// AJAX handler to fetch conversations
+add_action('wp_ajax_fetch_conversations', 'fetch_conversations');
+add_action('wp_ajax_nopriv_fetch_conversations', 'fetch_conversations');
+add_action('admin_enqueue_scripts', 'display_emotions_chart');
+
+// Hook the ai_chatbot_enqueue_scripts function to the 'wp_enqueue_scripts' action
+add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
+
+add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
+add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
+
+// Hook the ai_chatbot_enqueue_scripts function to the 'wp_enqueue_scripts' action
+add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
+
+add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
+add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
+add_action('admin_menu', 'ai_chatbot_add_admin_menu');
+
+// Hook into the_content filter
+add_filter('the_content', 'automatic_integration_callback');
+
+add_action('admin_init', 'ai_chatbot_settings_init');
+
 
 add_filter('rocket_exclude_js', 'exclude_files_from_wp_rocket');
 add_filter('rocket_exclude_css', 'exclude_files_from_wp_rocket');
