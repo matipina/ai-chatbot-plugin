@@ -1,24 +1,32 @@
-# ai-chatbot-plugin
+# Echos plugin
 
-Pasos para subir archivos:
+WordPress plugin powered by Google Gemini that allows to create custom
+chatbots by only answering a few questions.
 
-1. git add --all
-2. git commit -m 'MENSAJE'
-3. git push
+## Description
 
+## Installation
 
-Bajar ultima V
-1. git pull
+### Upload
 
-Como hacer branches
-1. git check out -b nombredebranch -> Crea una nueva branch y se mueve ahí
+1. Download the latest tagged archive (choose the "zip" option).
+2. Go to the __Plugins -> Add New__ screen and click the __Upload__ tab.
+3. Upload the zipped archive directly.
+4. Go to the Plugins screen and click __Activate__.
 
+### Manual
 
-Checkear status de update del repositorio
-1. git status
+1. Download the latest tagged archive (choose the "zip" option).
+2. Unzip the archive.
+3. Copy the folder to your `/wp-content/plugins/` directory.
+4. Go to the Plugins screen and click __Activate__.
 
-Borrar cagas
-1. git rm
+Check out the Codex for more information about [installing plugins manually](http://codex.wordpress.org/Managing_Plugins#Manual_Plugin_Installation).
 
-Cambiar de brunch
-1. git checkout brunch
+## Usage
+
+Just activate the plugin.
+
+## Credits
+
+Built by [Tiago Aragona](https://www.tiagoaragona.com) and [Matías Piña](https://matiaspina.com)
