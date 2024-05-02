@@ -1,14 +1,17 @@
 <?php
 /**
- * Plugin Name: AI Chatbot
- * Description: A WordPress plugin for integrating an AI Chatbot using gemini's API.
- * Version: 1.0.0
+ * Plugin Name: AI Chatbot Generator
+ * Description: A WordPress plugin for generating custom AI Chatbots using Google Gemini API.
+ * Version: 0.1.0
  * Author: Tiago Aragona & Matias Piña
+ * @package WordPress
  */
+
 
 session_start();
 use GeminiAPI\Client;
 use GeminiAPI\Resources\Parts\TextPart;
+
 require_once __DIR__ . '/vendor/autoload.php';
 
 // For logged-in users
@@ -17,12 +20,14 @@ add_action('wp_ajax_start_chat_session', 'handle_start_chat_session');
 // For not logged-in users
 add_action('wp_ajax_nopriv_start_chat_session', 'handle_start_chat_session');
 
-function handle_start_chat_session() {
+function handle_start_chat_session()
+{
     // Your code to handle the request
     wp_send_json_success(array('sessionId' => session_id()));
 }
 
-function myplugin_enqueue_font_awesome() {
+function myplugin_enqueue_font_awesome()
+{
     wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 }
 add_action('admin_enqueue_scripts', 'myplugin_enqueue_font_awesome');
@@ -32,15 +37,17 @@ function myplugin_enqueue_admin_dark_mode_style()
     wp_enqueue_style('myplugin-admin-dark-mode', plugins_url('admin-dark-mode.css', __FILE__));
 }
 add_action('admin_enqueue_scripts', 'myplugin_enqueue_admin_dark_mode_style', 100);
-function ai_chatbot_enqueue_admin_styles() {
+function ai_chatbot_enqueue_admin_styles()
+{
     wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
 }
 add_action('admin_enqueue_scripts', 'ai_chatbot_enqueue_admin_styles');
 
-function myplugin_enqueue_bootstrap() {
+function myplugin_enqueue_bootstrap()
+{
     // Enqueue Bootstrap CSS
     wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css');
-    
+
     // Enqueue Bootstrap JS
     wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js', array('jquery'), null, true);
     wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', array(), null, true);
@@ -51,7 +58,7 @@ function myplugin_enqueue_bootstrap() {
     // Assume get_last_7_days_emotion_data() fetches the required data
     $emotion_data = get_last_7_days_emotion_data(); // Make sure this function exists and fetches data correctly
     wp_localize_script('emotions-chart-js', 'aiChatbotEmotionData', $emotion_data);
-    
+
 }
 add_action('admin_enqueue_scripts', 'myplugin_enqueue_bootstrap');
 
@@ -86,13 +93,14 @@ $ai_chatbot_questions = array(
  * @param string $bot_message The bot's response to be added to the chat history.
  * @return void
  */
-function update_chat_history($user_message, $bot_message) {
+function update_chat_history($user_message, $bot_message)
+{
     global $wpdb;
     $table_name = $wpdb->prefix . 'sessions';
-    
+
     // Assume session_id is available. Generate or retrieve it accordingly.
     $session_id = session_id(); // Example, use actual logic to generate/retrieve session ID.
-    
+
     // Capture the user's IP address
     $user_ip = $_SERVER['REMOTE_ADDR'];
 
@@ -100,19 +108,19 @@ function update_chat_history($user_message, $bot_message) {
     $upload_dir = wp_upload_dir();
     $file_name = $session_id . '.txt';
     $file_path = $upload_dir['basedir'] . '/sessions/' . $file_name;
-    
+
     // Ensure the directory exists
     if (!file_exists($upload_dir['basedir'] . '/sessions')) {
         wp_mkdir_p($upload_dir['basedir'] . '/sessions');
     }
-    
+
     // Append the current conversation to the file
     $conversation_content = "User: $user_message\nBot: $bot_message\n";
     file_put_contents($file_path, $conversation_content, FILE_APPEND);
-    
+
     // Save or update the file URL and user IP in the database
     $file_url = $upload_dir['baseurl'] . '/sessions/' . $file_name;
-    
+
     // Check if a record already exists for this session_id, update if it does, insert if it doesn't
     $exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE session_id = %s", $session_id));
     if ($exists > 0) {
@@ -122,7 +130,7 @@ function update_chat_history($user_message, $bot_message) {
             [
                 'conversation' => $file_url, // new value
                 'user_ip' => $user_ip // include user_ip here
-            ], 
+            ],
             ['session_id' => $session_id] // condition
         );
     } else {
@@ -157,17 +165,18 @@ function generate_ai_prompt($new_user_input, $custom_info)
     foreach ($_SESSION['chat_history'] as $message_pair) {
         $history .= "User: " . $message_pair['user'] . "\nBot: " . $message_pair['bot'] . "\n";
     }
-    
+
     // Load instruction text from a file
     $instructionFilePath = plugin_dir_path(__FILE__) . 'instruction.txt';
     $instruction = file_get_contents($instructionFilePath);
-    
+
     // Combine instruction, custom information, and conversation history
     $prompt = $instruction . "\n" . $custom_info . "\n\n" . $history . "User: " . $new_user_input . "\nBot:";
     return $prompt;
 }
 
-function ai_chatbot_create_conversations_table() {
+function ai_chatbot_create_conversations_table()
+{
     global $wpdb;
     $table_name = $wpdb->prefix . 'sessions';
     $charset_collate = $wpdb->get_charset_collate();
@@ -181,12 +190,13 @@ function ai_chatbot_create_conversations_table() {
         PRIMARY KEY  (id)
     ) $charset_collate;";
 
-    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-    dbDelta( $sql );
+    require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
 }
-register_activation_hook( __FILE__, 'ai_chatbot_create_conversations_table' );
+register_activation_hook(__FILE__, 'ai_chatbot_create_conversations_table');
 
-function ai_chatbot_create_emotion_logs_table() {
+function ai_chatbot_create_emotion_logs_table()
+{
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
     $table_name = $wpdb->prefix . 'messages';
@@ -202,7 +212,7 @@ function ai_chatbot_create_emotion_logs_table() {
         PRIMARY KEY (id)
     ) $charset_collate;";
 
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
 
     // Check if the table was successfully created before attempting to add a foreign key
@@ -232,7 +242,8 @@ register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
  * @return void
  */
 
- function insert_emotion_data($session_id, $message, $emotion) {
+function insert_emotion_data($session_id, $message, $emotion)
+{
     global $wpdb;
     $wpdb->insert(
         $wpdb->prefix . 'messages',
@@ -246,22 +257,22 @@ register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
     );
 }
 
- function ai_chatbot_enqueue_scripts()
- {
+function ai_chatbot_enqueue_scripts()
+{
     wp_enqueue_script('jquery');
-     // Enqueue the AI Chatbot JavaScript file with jQuery as a dependency
-     wp_enqueue_script('ai-chatbot-js', plugins_url('/ai-chatbot.js', __FILE__), array('jquery'), '1.0.0', true);
- 
-     // Enqueue the AI Chatbot CSS file
-     wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
- 
-     // Enqueue Font Awesome for chatbot toggle icon
-     wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
- 
-     // Combine and pass settings to the JavaScript file
- 
- 
-     $chatbot_settings = array(
+    // Enqueue the AI Chatbot JavaScript file with jQuery as a dependency
+    wp_enqueue_script('ai-chatbot-js', plugins_url('/ai-chatbot.js', __FILE__), array('jquery'), '1.0.0', true);
+
+    // Enqueue the AI Chatbot CSS file
+    wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
+
+    // Enqueue Font Awesome for chatbot toggle icon
+    wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+    // Combine and pass settings to the JavaScript file
+
+
+    $chatbot_settings = array(
         'ajaxurl' => admin_url('admin-ajax.php'), // AJAX URL for WordPress
         'image_url' => get_option('ai_chatbot_image_url'), // Pass the image URL
         'primary_color' => get_option('ai_chatbot_primary_color', '#007bff'), // Default blue color
@@ -269,16 +280,16 @@ register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
         'defaultMessage' => get_option('ai_chatbot_default_message', 'Hello! I\'m here to help you. What can I do for you today?'),
     );
 
- 
-     wp_localize_script('ai-chatbot-js', 'aiChatbotSettings', $chatbot_settings);
- 
-     // Add a script to wait for DOMContentLoaded
-     wp_add_inline_script('ai-chatbot-js', '
+
+    wp_localize_script('ai-chatbot-js', 'aiChatbotSettings', $chatbot_settings);
+
+    // Add a script to wait for DOMContentLoaded
+    wp_add_inline_script('ai-chatbot-js', '
          document.addEventListener("DOMContentLoaded", function() {
          });
      ', 'after');
- }
- 
+}
+
 
 /**
  * Handles the AI Chatbot request, processes user input, and communicates with the gemini API.
@@ -291,7 +302,8 @@ register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
  * @return void
  */
 
-function plugin_custom_log($message) {
+function plugin_custom_log($message)
+{
     $log_file = plugin_dir_path(__FILE__) . 'ai-chatbot-debug.log';
     $current_time = date('Y-m-d H:i:s');
     $log_message = $current_time . ' - ' . $message . "\n";
@@ -335,7 +347,7 @@ function ai_chatbot_handle_request()
     $client = new Client($gemini_api_key);
 
     $prompt = generate_ai_prompt($user_message, $custom_info);
-    
+
     // Generate response using Gemini API
     $response = $client->geminiPro()->generateContent(
         new TextPart($prompt),
@@ -476,17 +488,23 @@ function ai_chatbot_add_admin_menu()
 {
     add_menu_page('AI ChatBot Settings', 'AI ChatBot', 'manage_options', 'ai_chatbot', 'ai_chatbot_settings_page');
 }
-function categorize_emotion($emotion_text) {
+function categorize_emotion($emotion_text)
+{
     $emotion_text = strtolower($emotion_text);
-    if (strpos($emotion_text, 'happiness') !== false) return 'happiness';
-    if (strpos($emotion_text, 'sadness') !== false) return 'sadness';
-    if (strpos($emotion_text, 'anger') !== false) return 'anger';
-    if (strpos($emotion_text, 'fear') !== false) return 'fear';
+    if (strpos($emotion_text, 'happiness') !== false)
+        return 'happiness';
+    if (strpos($emotion_text, 'sadness') !== false)
+        return 'sadness';
+    if (strpos($emotion_text, 'anger') !== false)
+        return 'anger';
+    if (strpos($emotion_text, 'fear') !== false)
+        return 'fear';
     // Default to 'Neutral' if no specific emotion is detected
     return 'neutral';
 }
 
-function update_emotion_counters($emotion_category) {
+function update_emotion_counters($emotion_category)
+{
     // Option name for storing serialized emotion data
     $option_name = 'ai_chatbot_emotion_daily_' . $emotion_category;
     $emotion_data = get_option($option_name, array());
@@ -504,7 +522,8 @@ function update_emotion_counters($emotion_category) {
 }
 
 
-function get_last_7_days_emotion_data() {
+function get_last_7_days_emotion_data()
+{
     global $wpdb;
     $start_of_week = date('Y-m-d', strtotime('Monday this week')); // Gets the date for Monday this week
     $end_of_week = date('Y-m-d', strtotime('Sunday this week')); // Gets the date for Sunday this week
@@ -517,7 +536,7 @@ function get_last_7_days_emotion_data() {
         GROUP BY DATE(created_at), emotion
         ORDER BY DATE(created_at) ASC
     ", ARRAY_A);
-    
+
     // Initialize the structure for aiChatbotEmotionData
     $formattedData = [
         'labels' => [],
@@ -556,55 +575,61 @@ function get_last_7_days_emotion_data() {
 
 
 
-function ai_chatbot_settings_page() {
+function ai_chatbot_settings_page()
+{
     ?>
     <div class="wrap">
         <div id="ai-chatbot-admin-container" style="background-color: #FAFAFA;">
-        <div class="ai-chatbot-content" style="padding-left: 100px; padding-right: 100px; padding-top: 50px; padding-bottom: 50px;">
-            <!-- Nav tabs -->
-            <div class="ai-chatbot-header">
-                <div class="ai-chatbot-logo">
-                    <!-- Place your logo HTML or image tag here -->
-                    <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/echoslogo3@2x.png" alt="Echos Logo">
-                </div>
+            <div class="ai-chatbot-content"
+                style="padding-left: 100px; padding-right: 100px; padding-top: 50px; padding-bottom: 50px;">
                 <!-- Nav tabs -->
-                <ul class="nav nav-tabs" id="aiChatbotTabs" role="tablist">
-                    <li class="nav-item">
-                    <a class="nav-link" id="custom-questions-tab" data-toggle="tab" href="#customQuestions" role="tab" aria-controls="customQuestions" aria-selected="false">Settings</a>
-                    </li>
-                    <li class="nav-item">
-                    <a class="nav-link active" id="emotion-counters-tab" data-toggle="tab" href="#emotionCounters" role="tab" aria-controls="emotionCounters" aria-selected="true">Analytics</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="conversations-tab" data-toggle="tab" href="#conversations" role="tab" aria-controls="conversations" aria-selected="false">Conversations</a>
-                    </li>
-                </ul>
-            </div>
+                <div class="ai-chatbot-header">
+                    <div class="ai-chatbot-logo">
+                        <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/assets/echoslogo3@2x.png" alt="Echos Logo">
+                    </div>
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" id="aiChatbotTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" id="custom-questions-tab" data-toggle="tab" href="#customQuestions"
+                                role="tab" aria-controls="customQuestions" aria-selected="false">Settings</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" id="emotion-counters-tab" data-toggle="tab" href="#emotionCounters"
+                                role="tab" aria-controls="emotionCounters" aria-selected="true">Analytics</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="conversations-tab" data-toggle="tab" href="#conversations" role="tab"
+                                aria-controls="conversations" aria-selected="false">Conversations</a>
+                        </li>
+                    </ul>
+                </div>
 
-            <!-- Tab panes -->
-            <div class="tab-content" style="margin-top: 20px;">
-                <div class="tab-pane fade show active" id="emotionCounters" role="tabpanel" aria-labelledby="emotion-counters-tab">
-                    <?php display_emotion_counters_admin(); ?>
-                    <?php display_sessions_chart(); // Call the function here ?>
-                    <?php display_emotions_chart(); // Call the function here ?>
-                    
-                </div>
-                <div class="tab-pane fade" id="customQuestions" role="tabpanel" aria-labelledby="custom-questions-tab">
-                    <form method="post" action="options.php">
-                    <?php display_ai_chatbot_settings_form(); ?>
-                    </form>
-                </div>
-                <div class="tab-pane fade" id="conversations" role="tabpanel" aria-labelledby="conversations-tab">
-                 <?php display_conversations_admin(); ?>
+                <!-- Tab panes -->
+                <div class="tab-content" style="margin-top: 20px;">
+                    <div class="tab-pane fade show active" id="emotionCounters" role="tabpanel"
+                        aria-labelledby="emotion-counters-tab">
+                        <?php display_emotion_counters_admin(); ?>
+                        <?php display_sessions_chart(); // Call the function here ?>
+                        <?php display_emotions_chart(); // Call the function here ?>
+
+                    </div>
+                    <div class="tab-pane fade" id="customQuestions" role="tabpanel" aria-labelledby="custom-questions-tab">
+                        <form method="post" action="options.php">
+                            <?php display_ai_chatbot_settings_form(); ?>
+                        </form>
+                    </div>
+                    <div class="tab-pane fade" id="conversations" role="tabpanel" aria-labelledby="conversations-tab">
+                        <?php display_conversations_admin(); ?>
+                    </div>
                 </div>
             </div>
-        </div>
         </div>
     </div>
     <?php
 }
 
-function display_conversations_admin() {
+function display_conversations_admin()
+{
     global $wpdb;
     $table_name = $wpdb->prefix . 'sessions';
 
@@ -622,7 +647,7 @@ function display_conversations_admin() {
 
     // Fetch limited conversations for the current page
     $conversations = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name ORDER BY created_at DESC LIMIT %d OFFSET %d", $per_page, $offset));
-    
+
     // Start output for conversations
     echo '<div class="ai-chatbot-box">';
     echo '<h3 style="text-align: center;">Conversation Records</h3>';
@@ -645,31 +670,31 @@ function display_conversations_admin() {
 
     echo '</tbody></table>';
     echo '</div>'; // End of conversation-table-container
-    
+
     // Pagination
     echo '<div class="pagination-container" style="text-align:center;">'; // Center pagination
     if ($total_pages > 1) {
         echo '<nav aria-label="Page navigation example"><ul class="pagination justify-content-center">';
-    
+
         // Previous button
         if ($current_page > 1) {
             echo '<li class="page-item"><a class="page-link" href="' . admin_url('admin.php?page=ai_chatbot&paged=' . ($current_page - 1)) . '">Prev</a></li>';
         } else {
             echo '<li class="page-item disabled"><span class="page-link">Prev</span></li>';
         }
-        
+
         // Page numbers
         for ($i = 1; $i <= $total_pages; $i++) {
             echo '<li class="page-item' . ($current_page === $i ? ' active' : '') . '"><a class="page-link" href="' . admin_url('admin.php?page=ai_chatbot&paged=' . $i) . '">' . $i . '</a></li>';
         }
-        
+
         // Next button
         if ($current_page < $total_pages) {
             echo '<li class="page-item"><a class="page-link" href="' . admin_url('admin.php?page=ai_chatbot&paged=' . ($current_page + 1)) . '">Next</a></li>';
         } else {
             echo '<li class="page-item disabled"><span class="page-link">Next</span></li>';
         }
-    
+
         echo '</ul></nav>';
     }
     echo '</div>'; // End of pagination-container
@@ -679,37 +704,38 @@ function display_conversations_admin() {
     // Pagination
     ?>
 
-<script type="text/javascript">
-    jQuery(document).ready(function($) {
-        $('.pagination-container a.page-link').on('click', function(e) {
-            e.preventDefault();
+    <script type="text/javascript">
+        jQuery(document).ready(function ($) {
+            $('.pagination-container a.page-link').on('click', function (e) {
+                e.preventDefault();
 
-            // Remove active class from all page buttons
-            $('.pagination-container a.page-link').parent().removeClass('active');
+                // Remove active class from all page buttons
+                $('.pagination-container a.page-link').parent().removeClass('active');
 
-            // Add active class to the clicked page button
-            $(this).parent().addClass('active');
+                // Add active class to the clicked page button
+                $(this).parent().addClass('active');
 
-            var page = $(this).text(); // Get the page number from the link text
-            var data = {
-                action: 'fetch_conversations',
-                page: page
-            };
+                var page = $(this).text(); // Get the page number from the link text
+                var data = {
+                    action: 'fetch_conversations',
+                    page: page
+                };
 
-            $.get(ajaxurl, data, function(response) {
-                $('#conversation-table-container').html(response);
+                $.get(ajaxurl, data, function (response) {
+                    $('#conversation-table-container').html(response);
+                });
             });
         });
-    });
-</script>
+    </script>
 
-<?php
+    <?php
 }
 // AJAX handler to fetch conversations
 add_action('wp_ajax_fetch_conversations', 'fetch_conversations');
 add_action('wp_ajax_nopriv_fetch_conversations', 'fetch_conversations');
 
-function fetch_conversations() {
+function fetch_conversations()
+{
     global $wpdb;
 
     $current_page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
@@ -786,7 +812,7 @@ function ai_chatbot_settings_init()
         'ai_chatbot_plugin_settings',
         'ai_chatbot_plugin_settings_section'
     );
-    
+
     add_settings_field(
         'ai_chatbot_default_message',
         __('Default Introductory Message', 'wordpress'),
@@ -813,12 +839,14 @@ function ai_chatbot_settings_init()
     }
 }
 
-function custom_bot_down_message_render() {
+function custom_bot_down_message_render()
+{
     $options = get_option('custom_bot_down_message');
     echo "<input type='text' name='custom_bot_down_message' value='" . esc_attr($options) . "' size='50'>";
 }
 
-function ai_chatbot_default_message_render() {
+function ai_chatbot_default_message_render()
+{
     $options = get_option('ai_chatbot_default_message');
     echo "<input type='text' name='ai_chatbot_default_message' value='" . esc_attr($options) . "' size='50'>";
 }
@@ -838,7 +866,8 @@ function ai_chatbot_gemini_api_key_render()
     <input type='text' name='ai_chatbot_gemini_api_key' value='<?php echo esc_attr($options); ?>' size='50'>
     <?php
 }
-function get_emotion_chart_data() {
+function get_emotion_chart_data()
+{
     $emotion_data = get_last_7_days_emotion_data(); // Assume this returns data correctly
     $chart_data = [
         'labels' => [], // For storing dates
@@ -870,13 +899,15 @@ function get_emotion_chart_data() {
     return $chart_data;
 }
 
-function display_emotions_chart() {
+function display_emotions_chart()
+{
     $chart_data = get_emotion_chart_data();
     wp_localize_script('emotions-chart-js', 'emotionChartData', $chart_data);
 }
 add_action('admin_enqueue_scripts', 'display_emotions_chart');
 
-function ai_chatbot_question_render($args) {
+function ai_chatbot_question_render($args)
+{
     $options = get_option($args['label_for']);
     ?>
     <div class="ai-chatbot-question">
@@ -893,7 +924,8 @@ function ai_chatbot_settings_section_callback()
     echo __('Answer the following questions to customize your AI ChatBot.', 'wordpress');
 }
 
-function get_sessions_data_current_week() {
+function get_sessions_data_current_week()
+{
     global $wpdb;
 
     // Calculate the start and end dates of the current week
@@ -918,13 +950,14 @@ function get_sessions_data_current_week() {
 
     // Populate the session data with actual counts from the database
     foreach ($results as $row) {
-        $session_data[$row['session_date']] = (int)$row['session_count'];
+        $session_data[$row['session_date']] = (int) $row['session_count'];
     }
 
     return $session_data;
 }
 
-function display_emotion_counters_admin() {
+function display_emotion_counters_admin()
+{
     global $wpdb;
 
     // Define the emotions and their corresponding colors
@@ -1016,7 +1049,8 @@ function display_emotion_counters_admin() {
 }
 
 
-function get_sessions_data_last_7_days() {
+function get_sessions_data_last_7_days()
+{
     global $wpdb;
     // Example query, adjust according to your actual data storage and structure
     $results = $wpdb->get_results("
@@ -1030,24 +1064,27 @@ function get_sessions_data_last_7_days() {
     return $results;
 }
 
-function display_sessions_chart() {
+function display_sessions_chart()
+{
     $session_data = get_sessions_data_current_week();
-    $formatted_labels = array_map(function($day) {
+    $formatted_labels = array_map(function ($day) {
         return date('D', strtotime($day));
     }, array_keys($session_data));
 
     $data_for_chart = [
         'labels' => $formatted_labels,
-        'datasets' => [[
-            'label' => 'Sessions',
-            'data' => array_values($session_data),
-            'backgroundColor' => 'rgb(82, 39, 204)',
-            'borderColor' => 'rgb(75, 192, 192)',
-            'barPercentage' => 0.5,
-            'categoryPercentage' => 0.8,
-            'borderRadius' => ['topLeft' => 20, 'topRight' => 20],
-            'tension' => 0.1
-        ]]
+        'datasets' => [
+            [
+                'label' => 'Sessions',
+                'data' => array_values($session_data),
+                'backgroundColor' => 'rgb(82, 39, 204)',
+                'borderColor' => 'rgb(75, 192, 192)',
+                'barPercentage' => 0.5,
+                'categoryPercentage' => 0.8,
+                'borderRadius' => ['topLeft' => 20, 'topRight' => 20],
+                'tension' => 0.1
+            ]
+        ]
     ];
 
     echo "<script>
@@ -1101,11 +1138,12 @@ add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
 add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 
-function display_ai_chatbot_settings_form() {
+function display_ai_chatbot_settings_form()
+{
     echo '<div id="chatbot-box">'; // Start of existing settings box
     // New outer div for styling
-    echo '<div class="white-box" style="background-color: white; padding: 80px; border-radius: 20px;">'; 
-    echo '<form method="post" action="options.php">';    
+    echo '<div class="white-box" style="background-color: white; padding: 80px; border-radius: 20px;">';
+    echo '<form method="post" action="options.php">';
     settings_fields('ai_chatbot_plugin_settings');
     do_settings_sections('ai_chatbot_plugin_settings');
 
@@ -1130,13 +1168,14 @@ add_filter('the_content', 'automatic_integration_callback');
 
 add_action('admin_init', 'ai_chatbot_settings_init');
 
-function exclude_files_from_wp_rocket( $excluded_files ) {
+function exclude_files_from_wp_rocket($excluded_files)
+{
     $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/ai-chatbot.js';
     $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/ai-chatbot-style.css';
     return $excluded_files;
 }
 
-add_filter( 'rocket_exclude_js', 'exclude_files_from_wp_rocket' );
-add_filter( 'rocket_exclude_css', 'exclude_files_from_wp_rocket' );
+add_filter('rocket_exclude_js', 'exclude_files_from_wp_rocket');
+add_filter('rocket_exclude_css', 'exclude_files_from_wp_rocket');
 
 ?>
