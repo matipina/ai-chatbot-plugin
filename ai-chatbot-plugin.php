@@ -554,7 +554,96 @@ function get_last_7_days_emotion_data() {
     return $formattedData;
 }
 
+function display_emotion_counters_admin() {
+    global $wpdb;
 
+    // Define the emotions and their corresponding colors
+    $emotion_colors = array(
+        'happiness' => '#FFE69C',
+        'sadness' => '#9EEAF9',
+        'anger' => '#F8D7DA',
+        'fear' => '#A6E9D5',
+        'neutral' => '#E9ECEF',
+        // Add more emotions and their colors as needed
+    );
+
+    // Define the list of emotions
+    $emotions = array_keys($emotion_colors);
+
+    // Initialize total messages count
+    $totalMessages = 0;
+
+    // Start of the box for emotion counters
+    echo '<div class="ai-chatbot-box mb-4">';
+    echo '<div class="row">'; // Bootstrap row for a responsive grid layout of emotion counters
+
+    // Loop through each emotion to display its count
+    foreach ($emotions as $emotion) {
+        // Query the database to get the count for the current emotion
+        $count = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}messages WHERE emotion = %s",
+                $emotion
+            )
+        );
+
+        // Add the count to the total messages count
+        $totalMessages += $count;
+
+        // Get the color for the current emotion
+        $emotionColor = isset($emotion_colors[$emotion]) ? $emotion_colors[$emotion] : '#FFFFFF';
+
+        // Display the emotion card with its count
+        echo '<div class="col-md-4 mb-4">';
+        echo '<div class="emotion-card card">';
+        echo '<div class="card-body">';
+        echo '<div class="emotion-name-group" style="background-color: ' . $emotionColor . ';">';
+        echo '<h5 class="emotion-name">' . ucfirst($emotion) . '</h5>';
+        echo '</div>';
+        echo '<div class="number-messages-group">';
+        echo '<p class="emotion-count">' . $count . '</p>';
+        echo '<p class="emotion-messages">Messages</p>';
+        echo '</div>'; // Close number-messages-group
+        echo '</div>'; // Close card-body
+        echo '</div>'; // Close emotion-card
+        echo '</div>'; // Close column
+    }
+
+    // Display total messages card
+    echo '<div class="col-md-4 mb-4">';
+    echo '<div class="total-card card">';
+    echo '<div class="total-body">';
+    echo '<div class="number-messages-group">';
+    echo '<p class="total-count" style="color: white;">' . $totalMessages . '</p>';
+    echo '<p class="total-message" style="color: white;">Total Messages</p>';
+    echo '</div>'; // Close number-messages-group
+    echo '</div>'; // Close card-body
+    echo '</div>'; // Close emotion-card
+    echo '</div>'; // Close column
+
+    echo '</div>'; // Close row for emotion counters
+    echo '</div>'; // Close the box for emotion counters
+
+    echo '<div class="row">'; // Bootstrap row for aligning charts horizontally
+
+    // Box for the Sessions Chart
+    echo '<div class="col-md-6">'; // Half-width column for the second chart
+    echo '<div class="ai-chatbot-box" style="height: 500px; width: 100%;">'; // Apply styling to the Emotions Chart box
+    echo '<h3>Sessions Chart</h3>'; // Title on top
+    echo '<canvas id="sessionsChart" style="height: 90%; width: 100%;"></canvas>'; // Chart below the title
+    echo '</div>'; // Close the box for the Emotions Chart
+    echo '</div>'; // Close the column for the Emotions Chart
+
+    // Box for the Emotions Chart
+    echo '<div class="col-md-6">'; // Half-width column for the second chart
+    echo '<div class="ai-chatbot-box" style="height: 500px; width: 100%;">'; // Apply styling to the Emotions Chart box
+    echo '<h3>Emotion Analysis Chart</h3>'; // Title on top
+    echo '<canvas id="emotionsChart" style="height: 100%; width: 100%;"></canvas>'; // Chart below the title
+    echo '</div>'; // Close the box for the Emotions Chart
+    echo '</div>'; // Close the column for the Emotions Chart
+
+    echo '</div>'; // Close the row for charts
+}
 
 function ai_chatbot_settings_page() {
     ?>
@@ -895,124 +984,37 @@ function ai_chatbot_settings_section_callback()
 
 function get_sessions_data_current_week() {
     global $wpdb;
+    date_default_timezone_set('America/New_York'); // Adjust to your server's timezone
 
-    // Calculate the start and end dates of the current week
     $start_of_week = date('Y-m-d', strtotime('Monday this week')) . ' 00:00:00';
     $end_of_week = date('Y-m-d', strtotime('Sunday this week')) . ' 23:59:59';
 
-    // SQL query to fetch session counts grouped by day
-    $query = $wpdb->prepare("
-        SELECT DATE(created_at) AS session_date, COUNT(*) AS session_count
+    // Adjusted SQL for more accurate day ending consideration
+    $query = "
+        SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS session_date, COUNT(*) AS session_count
         FROM {$wpdb->prefix}sessions
-        WHERE created_at BETWEEN %s AND %s
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at) ASC
-    ", $start_of_week, $end_of_week);
+        WHERE created_at >= '{$start_of_week}' AND created_at <= '{$end_of_week}'
+        GROUP BY session_date
+        ORDER BY session_date ASC
+    ";
     $results = $wpdb->get_results($query, ARRAY_A);
 
-    // Initialize the session data for each day of the current week
-    $session_data = [];
-    for ($date = strtotime($start_of_week); $date <= strtotime($end_of_week); $date += 86400) {
-        $session_data[date('Y-m-d', $date)] = 0;
+    if (empty($results)) {
+        error_log('No results found: ' . $wpdb->last_error);
+        return []; // Return an empty array if no results
     }
 
-    // Populate the session data with actual counts from the database
+    $session_data = [];
+    for ($date = strtotime($start_of_week); $date <= strtotime($end_of_week); $date += 86400) {
+        $formatted_date = date('Y-m-d', $date);
+        $session_data[$formatted_date] = 0; // Initialize each day with zero sessions
+    }
+
     foreach ($results as $row) {
         $session_data[$row['session_date']] = (int)$row['session_count'];
     }
 
     return $session_data;
-}
-
-function display_emotion_counters_admin() {
-    global $wpdb;
-
-    // Define the emotions and their corresponding colors
-    $emotion_colors = array(
-        'happiness' => '#FFE69C',
-        'sadness' => '#9EEAF9',
-        'anger' => '#F8D7DA',
-        'fear' => '#A6E9D5',
-        'neutral' => '#E9ECEF',
-        // Add more emotions and their colors as needed
-    );
-
-    // Define the list of emotions
-    $emotions = array_keys($emotion_colors);
-
-    // Initialize total messages count
-    $totalMessages = 0;
-
-    // Start of the box for emotion counters
-    echo '<div class="ai-chatbot-box mb-4">';
-    echo '<div class="row">'; // Bootstrap row for a responsive grid layout of emotion counters
-
-    // Loop through each emotion to display its count
-    foreach ($emotions as $emotion) {
-        // Query the database to get the count for the current emotion
-        $count = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}messages WHERE emotion = %s",
-                $emotion
-            )
-        );
-
-        // Add the count to the total messages count
-        $totalMessages += $count;
-
-        // Get the color for the current emotion
-        $emotionColor = isset($emotion_colors[$emotion]) ? $emotion_colors[$emotion] : '#FFFFFF';
-
-        // Display the emotion card with its count
-        echo '<div class="col-md-4 mb-4">';
-        echo '<div class="emotion-card card">';
-        echo '<div class="card-body">';
-        echo '<div class="emotion-name-group" style="background-color: ' . $emotionColor . ';">';
-        echo '<h5 class="emotion-name">' . ucfirst($emotion) . '</h5>';
-        echo '</div>';
-        echo '<div class="number-messages-group">';
-        echo '<p class="emotion-count">' . $count . '</p>';
-        echo '<p class="emotion-messages">Messages</p>';
-        echo '</div>'; // Close number-messages-group
-        echo '</div>'; // Close card-body
-        echo '</div>'; // Close emotion-card
-        echo '</div>'; // Close column
-    }
-
-    // Display total messages card
-    echo '<div class="col-md-4 mb-4">';
-    echo '<div class="total-card card">';
-    echo '<div class="total-body">';
-    echo '<div class="number-messages-group">';
-    echo '<p class="total-count" style="color: white;">' . $totalMessages . '</p>';
-    echo '<p class="total-message" style="color: white;">Total Messages</p>';
-    echo '</div>'; // Close number-messages-group
-    echo '</div>'; // Close card-body
-    echo '</div>'; // Close emotion-card
-    echo '</div>'; // Close column
-
-    echo '</div>'; // Close row for emotion counters
-    echo '</div>'; // Close the box for emotion counters
-
-    echo '<div class="row">'; // Bootstrap row for aligning charts horizontally
-
-    // Box for the Sessions Chart
-    echo '<div class="col-md-6">'; // Half-width column for the second chart
-    echo '<div class="ai-chatbot-box" style="height: 500px; width: 100%;">'; // Apply styling to the Emotions Chart box
-    echo '<h3>Sessions Chart</h3>'; // Title on top
-    echo '<canvas id="sessionsChart" style="height: 90%; width: 100%;"></canvas>'; // Chart below the title
-    echo '</div>'; // Close the box for the Emotions Chart
-    echo '</div>'; // Close the column for the Emotions Chart
-
-    // Box for the Emotions Chart
-    echo '<div class="col-md-6">'; // Half-width column for the second chart
-    echo '<div class="ai-chatbot-box" style="height: 500px; width: 100%;">'; // Apply styling to the Emotions Chart box
-    echo '<h3>Emotion Analysis Chart</h3>'; // Title on top
-    echo '<canvas id="emotionsChart" style="height: 100%; width: 100%;"></canvas>'; // Chart below the title
-    echo '</div>'; // Close the box for the Emotions Chart
-    echo '</div>'; // Close the column for the Emotions Chart
-
-    echo '</div>'; // Close the row for charts
 }
 
 
