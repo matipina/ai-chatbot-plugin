@@ -6,13 +6,15 @@
  * Author: Tiago Aragona & Matias Piña
  */
 
-
-
 if (!defined('ABSPATH')) {
     exit;
 }
 
 require_once __DIR__ . '/vendor/autoload.php';
+
+require_once __DIR__ . '/includes/class-assets-manager.php';
+require_once __DIR__ . '/includes/class-aichatbot.php';
+require_once __DIR__ . '/includes/class-utils.php';
 
 use GeminiAPI\Client;
 use GeminiAPI\Resources\Parts\TextPart;
@@ -32,7 +34,6 @@ $ai_chatbot_questions = array(
 
 function handle_start_chat_session()
 {
-    // Your code to handle the request
     wp_send_json_success(array('sessionId' => session_id()));
 }
 function myplugin_enqueue_font_awesome()
@@ -63,7 +64,7 @@ function myplugin_enqueue_bootstrap()
     wp_enqueue_script('emotions-chart-js', plugins_url('/emotions-chart.js', __FILE__), array('chart-js'), '1.0.0', true);
 
     // Assume get_last_7_days_emotion_data() fetches the required data
-    $emotion_data = get_last_7_days_emotion_data(); // Make sure this function exists and fetches data correctly
+    $emotion_data = get_last_7_days_emotion_data();
     wp_localize_script('emotions-chart-js', 'aiChatbotEmotionData', $emotion_data);
 
 }
@@ -927,7 +928,7 @@ function get_sessions_data_current_week()
         ORDER BY session_date ASC
     ";
     $results = $wpdb->get_results($query, ARRAY_A);
-    
+
     if (empty($results)) {
         error_log('No results found: ' . $wpdb->last_error);
         return []; // Return an empty array if no results
@@ -1105,7 +1106,6 @@ function display_sessions_chart()
     </script>";
 }
 
-
 function ai_chatbot_image_url_render()
 {
     $options = get_option('ai_chatbot_image_url');
@@ -1151,6 +1151,8 @@ function exclude_files_from_wp_rocket($excluded_files)
     $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/ai-chatbot-style.css';
     return $excluded_files;
 }
+
+
 register_activation_hook(__FILE__, 'ai_chatbot_create_emotion_logs_table');
 register_activation_hook(__FILE__, 'ai_chatbot_create_conversations_table');
 
@@ -1199,5 +1201,11 @@ add_action('admin_init', 'ai_chatbot_settings_init');
 
 add_filter('rocket_exclude_js', 'exclude_files_from_wp_rocket');
 add_filter('rocket_exclude_css', 'exclude_files_from_wp_rocket');
+
+
+$assetManager = new AssetManager();
+$assetManager->register();
+// Instantiate the AIChatbot class.
+//$ai_chatbot = new AIChatbot();
 
 ?>
