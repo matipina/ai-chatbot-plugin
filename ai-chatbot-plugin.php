@@ -14,7 +14,6 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 require_once __DIR__ . '/includes/class-assets-manager.php';
 require_once __DIR__ . '/includes/class-aichatbot.php';
-require_once __DIR__ . '/includes/class-utils.php';
 
 use GeminiAPI\Client;
 use GeminiAPI\Resources\Parts\TextPart;
@@ -32,37 +31,41 @@ $ai_chatbot_questions = array(
     "How can customers contact you for support?"
 );
 
+
+function ai_chatbot_create_conversations_table()
+{
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'sessions';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE $table_name (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        session_id VARCHAR(255) NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        conversation LONGTEXT NOT NULL,
+        user_ip VARCHAR(45) NOT NULL, /* Support for IPv6 */
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+
+    require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+}
+
 function handle_start_chat_session()
 {
     wp_send_json_success(array('sessionId' => session_id()));
 }
 
-function ai_chatbot_enqueue_admin_styles()
-{
-    wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
-}
-
 function myplugin_enqueue_bootstrap()
 {
-    // Enqueue Bootstrap CSS
     wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css');
-
-    // Enqueue Bootstrap JS
     wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js', array('jquery'), null, true);
     wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', array(), null, true);
-
-    // Enqueue emotions-chart.js with Chart.js as a dependency
     wp_enqueue_script('emotions-chart-js', plugins_url('/emotions-chart.js', __FILE__), array('chart-js'), '1.0.0', true);
 
     // Assume get_last_7_days_emotion_data() fetches the required data
     $emotion_data = get_last_7_days_emotion_data();
     wp_localize_script('emotions-chart-js', 'aiChatbotEmotionData', $emotion_data);
-
-}
-
-function myplugin_enqueue_google_fonts()
-{
-    wp_enqueue_style('myplugin-dm-sans-font', 'https://fonts.googleapis.com/css2?family=DM+Sans&display=swap');
 }
 
 /**
@@ -156,25 +159,6 @@ function generate_ai_prompt($new_user_input, $custom_info)
     // Combine instruction, custom information, and conversation history
     $prompt = $instruction . "\n" . $custom_info . "\n\n" . $history . "User: " . $new_user_input . "\nBot:";
     return $prompt;
-}
-
-function ai_chatbot_create_conversations_table()
-{
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'sessions';
-    $charset_collate = $wpdb->get_charset_collate();
-
-    $sql = "CREATE TABLE $table_name (
-        id mediumint(9) NOT NULL AUTO_INCREMENT,
-        session_id VARCHAR(255) NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        conversation LONGTEXT NOT NULL,
-        user_ip VARCHAR(45) NOT NULL, /* Support for IPv6 */
-        PRIMARY KEY  (id)
-    ) $charset_collate;";
-
-    require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql);
 }
 
 function ai_chatbot_create_emotion_logs_table()
@@ -320,7 +304,6 @@ function ai_chatbot_handle_request()
     // Send a JSON-encoded success response with just the bot's response
     wp_send_json_success(array('response' => $bot_response));
 }
-
 
 function perform_emotional_analysis($user_message)
 {
@@ -519,8 +502,6 @@ function get_last_7_days_emotion_data()
 
     return $formattedData;
 }
-
-
 
 function ai_chatbot_settings_page()
 {
@@ -1015,8 +996,10 @@ function get_sessions_data_last_7_days()
     return $results;
 }
 
-function display_sessions_chart()
-{
+function display_sessions_chart() {
+    wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
+    wp_enqueue_script('sessions-chart', plugins_url('/assets/js/sessions-chart.js', __FILE__), ['chart-js'], '1.0', true);
+
     $session_data = get_sessions_data_current_week();
     $formatted_labels = array_map(function ($day) {
         return date('D', strtotime($day));
@@ -1038,31 +1021,9 @@ function display_sessions_chart()
         ]
     ];
 
-    echo "<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var ctx = document.getElementById('sessionsChart');
-        if (ctx) {
-            var ctxSessions = ctx.getContext('2d');
-            if (window.myChartInstance) {
-                window.myChartInstance.destroy();
-            }
-            console.log(" . json_encode($data_for_chart) . "); // Log the data for inspection
-            window.myChartInstance = new Chart(ctxSessions, {
-                type: 'bar',
-                data: " . json_encode($data_for_chart) . ",
-                options: {
-                    scales: { y: { beginAtZero: true } },
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: true } } // Ensure the legend is displayed for debugging
-                }
-            });
-        } else {
-            console.error('SessionsChart element not found');
-        }
-    });
-    </script>";
+    wp_localize_script('sessions-chart', 'ChartData', $data_for_chart);
 }
+
 
 function ai_chatbot_image_url_render()
 {
@@ -1136,7 +1097,6 @@ add_action('wp_ajax_fetch_conversations', 'fetch_conversations');
 add_action('wp_ajax_nopriv_fetch_conversations', 'fetch_conversations');
 add_action('admin_enqueue_scripts', 'display_emotions_chart');
 
-
 add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 
@@ -1144,16 +1104,10 @@ add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('admin_menu', 'ai_chatbot_add_admin_menu');
 
-// Hook into the_content filter
 add_filter('the_content', 'automatic_integration_callback');
-
 add_action('admin_init', 'ai_chatbot_settings_init');
-
 
 add_filter('rocket_exclude_js', 'exclude_files_from_wp_rocket');
 add_filter('rocket_exclude_css', 'exclude_files_from_wp_rocket');
-
-// Instantiate the AIChatbot class.
-//$ai_chatbot = new AIChatbot();
 
 ?>

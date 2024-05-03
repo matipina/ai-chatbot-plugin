@@ -8,56 +8,57 @@ if (!defined('ABSPATH')) {
  * Class AssetManager
  * Manages the enqueuing of scripts and styles for the plugin.
  */
-class AssetManager {
-    public function register() {
+class AssetManager
+{
+    public function register()
+    {
         add_action('wp_enqueue_scripts', [$this, 'enqueuePublicAssets']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAdminAssets'], 100);
-
     }
 
     public function enqueuePublicAssets() {
-        $this->enqueueFontAwesome();
         $this->enqueueBootstrap();
         $this->enqueueGoogleFonts();
-        $this->enqueueAdminChatbotStyles();
         $this->enqueueChatbotScripts();
+        $this->enqueueAdminChatbotStyles();
         $this->enqueueAdminDarkModeStyle();
     }
 
-    public function enqueueAdminAssets() {
+ public function enqueueAdminAssets() {
+        $this->enqueueFontAwesome();
+        $this->enqueueAdminChatbotStyles();
         $this->enqueueAdminDarkModeStyle();
     }
 
-    private function enqueueFontAwesome() {
+    private function enqueueFontAwesome()
+    {
         wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
     }
 
-    private function enqueueAdminDarkModeStyle() {
+    private function enqueueAdminDarkModeStyle()
+    {
         wp_enqueue_style('myplugin-admin-dark-mode', plugins_url('../assets/css/admin-dark-mode.css', __FILE__));
     }
 
-    private function enqueueAdminChatbotStyles() {
+    private function enqueueAdminChatbotStyles()
+    {
         wp_enqueue_style('ai-chatbot-css', plugins_url('../assets/css/ai-chatbot-style.css', __FILE__));
     }
 
-    private function enqueueBootstrap() {
+    private function enqueueBootstrap()
+    {
         wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css');
         wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js', ['jquery'], null, true);
         wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
-
-        // Enqueue emotions-chart.js with Chart.js as a dependency
-        //wp_enqueue_script('emotions-chart-js', plugins_url('../assets/js/emotions-chart.js', __FILE__), array('chart-js'), '1.0.0', true);
-
-        // Assume get_last_7_days_emotion_data() fetches the required data
-        //$emotion_data = get_last_7_days_emotion_data();
-        //wp_localize_script('emotions-chart-js', 'aiChatbotEmotionData', $emotion_data);
     }
 
-    private function enqueueGoogleFonts() {
+    private function enqueueGoogleFonts()
+    {
         wp_enqueue_style('myplugin-dm-sans-font', 'https://fonts.googleapis.com/css2?family=DM+Sans&display=swap');
     }
 
-    private function enqueueChatbotScripts() {
+    private function enqueueChatbotScripts()
+    {
         wp_enqueue_script('jquery');
         wp_enqueue_script('ai-chatbot-js', plugins_url('../assets/js/ai-chatbot.js', __FILE__), ['jquery'], '1.0.0', true);
 
@@ -75,4 +76,3 @@ class AssetManager {
          ', 'after');
     }
 }
-
