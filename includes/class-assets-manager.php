@@ -15,7 +15,6 @@ class AssetManager
         add_action('wp_enqueue_scripts', [$this, 'enqueuePublicAssets']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAdminAssets'], 100);
     }
-
     public function enqueuePublicAssets()
     {
         $this->enqueueBootstrap();
