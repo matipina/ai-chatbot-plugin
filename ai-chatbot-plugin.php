@@ -11,9 +11,8 @@ if (!defined('ABSPATH')) {
 }
 
 require_once __DIR__ . '/vendor/autoload.php';
-
 require_once __DIR__ . '/includes/class-assets-manager.php';
-require_once __DIR__ . '/includes/class-aichatbot.php';
+require_once __DIR__ . '/includes/class-settings-mananger.php';
 
 use GeminiAPI\Client;
 use GeminiAPI\Resources\Parts\TextPart;
@@ -241,69 +240,64 @@ function plugin_custom_log($message)
     file_put_contents($log_file, $log_message, FILE_APPEND);
 }
 
-function ai_chatbot_handle_request()
-{
-    $_SESSION['emotion_analysis_done'] = false;
-    // Check if AI Chatbot is enabled
+/**
+ * Handles AJAX requests for the AI Chatbot.
+ *
+ * This function serves as the backend handler for processing user input through the AI Chatbot. 
+ * It checks if the chatbot is enabled, gathers necessary custom settings, processes the user input
+ * using the Gemini API, performs emotional analysis, updates the chat history, and returns the chatbot's
+ * response to the user.
+ *
+ * @return void Outputs JSON response and terminates execution.
+ */
+function ai_chatbot_handle_request() {
+    // Ensure the chatbot functionality is activated.
     if (get_option('ai_chatbot_enabled') != '1') {
         wp_send_json_error(array('error' => 'AI ChatBot is disabled'));
         return;
     }
 
-    // Retrieve custom information from settings
+    // Accumulate custom information based on predefined questions.
     global $ai_chatbot_questions;
     $custom_info = "";
     foreach ($ai_chatbot_questions as $index => $question) {
         $answer = get_option('ai_chatbot_question_' . ($index + 1), '');
-        if (!empty($answer)) {
-            $custom_info .= $question . " " . $answer . " ";
-        } else {
-            // If there's no answer, add default message
-            $custom_info .= $question . "There is no information available. ";
-        }
+        $custom_info .= $answer ? "$question $answer " : "$question There is no information available. ";
     }
 
-    // Process user input
+    // Sanitize and retrieve the user's message.
     $user_message = isset($_POST['message']) ? sanitize_text_field($_POST['message']) : '';
 
-    // Retrieve Gemini API key
-    $gemini_api_key = get_option('ai_chatbot_gemini_api_key'); // Ensure you have this option available
+    // Fetch the API key and handle error if missing.
+    $gemini_api_key = get_option('ai_chatbot_gemini_api_key');
     if (!$gemini_api_key) {
         wp_send_json_error(array('error' => 'Gemini API Key is missing'));
         return;
     }
 
-    // Initialize Gemini API Client
-
+    // Initialize the API client.
     $client = new Client($gemini_api_key);
-
     $prompt = generate_ai_prompt($user_message, $custom_info);
 
-    // Generate response using Gemini API
-    $response = $client->geminiPro()->generateContent(
-        new TextPart($prompt),
-    );
+    // Request content generation from the API.
+    $response = $client->geminiPro()->generateContent(new TextPart($prompt));
+    $bot_response = $response->text();  // Ensure that the response method is appropriate.
 
-    $bot_response = $response->text(); // Assuming the text() method retrieves the response text
-
-    // Perform emotional analysis on the user's message
+    // Perform and handle emotional analysis.
     $emotion_category = perform_emotional_analysis($user_message);
     if ($emotion_category !== false) {
-        // Emotion analysis successful, handle accordingly
         update_emotion_counters($emotion_category);
-    }
-
-    if ($emotion_category !== false) {
         $session_id = session_id();
         insert_emotion_data($session_id, $user_message, $emotion_category);
     }
 
-    // Update the chat history with the user's message and the bot's response
+    // Record the conversation in the chat history.
     update_chat_history($user_message, $bot_response);
 
-    // Send a JSON-encoded success response with just the bot's response
+    // Respond with the bot's message.
     wp_send_json_success(array('response' => $bot_response));
 }
+
 
 function perform_emotional_analysis($user_message)
 {
@@ -690,63 +684,14 @@ function fetch_conversations()
     wp_die();
 }
 
-function ai_chatbot_settings_init()
+function ai_chatbot_settings_section_callback()
 {
-    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_enabled');
-    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_gemini_api_key');
-    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_image_url');
-    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_primary_color');
-    register_setting('ai_chatbot_plugin_settings', 'chatbot_name');
-    register_setting('ai_chatbot_plugin_settings', 'custom_bot_down_message');
-    register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_default_message');
+    echo __('Answer the following questions to customize your AI ChatBot.', 'wordpress');
+}
 
-    add_settings_section(
-        'ai_chatbot_plugin_settings_section',
-        __('Customize your AI ChatBot', 'wordpress'),
-        'ai_chatbot_settings_section_callback',
-        'ai_chatbot_plugin_settings'
-    );
 
-    add_settings_field(
-        'ai_chatbot_enabled',
-        __('Enable AI ChatBot', 'wordpress'),
-        'ai_chatbot_enabled_render',
-        'ai_chatbot_plugin_settings',
-        'ai_chatbot_plugin_settings_section'
-    );
-
-    add_settings_field(
-        'ai_chatbot_primary_color',
-        __('Primary Color', 'wordpress'),
-        'ai_chatbot_primary_color_render',
-        'ai_chatbot_plugin_settings',
-        'ai_chatbot_plugin_settings_section'
-    );
-
-    add_settings_field(
-        'ai_chatbot_image_url',
-        __('Chatbot Image URL', 'wordpress'),
-        'ai_chatbot_image_url_render',
-        'ai_chatbot_plugin_settings',
-        'ai_chatbot_plugin_settings_section'
-    );
-
-    add_settings_field(
-        'ai_chatbot_gemini_api_key',
-        __('Gemini API Key', 'wordpress'),
-        'ai_chatbot_gemini_api_key_render',
-        'ai_chatbot_plugin_settings',
-        'ai_chatbot_plugin_settings_section'
-    );
-
-    add_settings_field(
-        'ai_chatbot_default_message',
-        __('Default Introductory Message', 'wordpress'),
-        'ai_chatbot_default_message_render',
-        'ai_chatbot_plugin_settings',
-        'ai_chatbot_plugin_settings_section'
-    );
-
+function ai_chatbot_questions_setup()
+{
     global $ai_chatbot_questions;
     foreach ($ai_chatbot_questions as $index => $question) {
         register_setting('ai_chatbot_plugin_settings', 'ai_chatbot_question_' . ($index + 1));
@@ -843,11 +788,6 @@ function ai_chatbot_question_render($args)
             name="<?php echo esc_attr($args['label_for']); ?>"><?php echo esc_textarea($options); ?></textarea>
     </div>
     <?php
-}
-
-function ai_chatbot_settings_section_callback()
-{
-    echo __('Answer the following questions to customize your AI ChatBot.', 'wordpress');
 }
 
 function get_sessions_data_current_week()
@@ -1103,10 +1043,10 @@ add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_reques
 add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('admin_menu', 'ai_chatbot_add_admin_menu');
-
 add_filter('the_content', 'automatic_integration_callback');
-add_action('admin_init', 'ai_chatbot_settings_init');
 
+$settingsManager = new SettingsManager();
+add_action('admin_init', 'ai_chatbot_questions_setup');
 add_filter('rocket_exclude_js', 'exclude_files_from_wp_rocket');
 add_filter('rocket_exclude_css', 'exclude_files_from_wp_rocket');
 

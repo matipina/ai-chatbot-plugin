@@ -16,15 +16,18 @@ class AssetManager
         add_action('admin_enqueue_scripts', [$this, 'enqueueAdminAssets'], 100);
     }
 
-    public function enqueuePublicAssets() {
+    public function enqueuePublicAssets()
+    {
         $this->enqueueBootstrap();
         $this->enqueueGoogleFonts();
         $this->enqueueChatbotScripts();
         $this->enqueueAdminChatbotStyles();
         $this->enqueueAdminDarkModeStyle();
+        $this->enqueueFontAwesome();
     }
 
- public function enqueueAdminAssets() {
+    public function enqueueAdminAssets()
+    {
         $this->enqueueFontAwesome();
         $this->enqueueAdminChatbotStyles();
         $this->enqueueAdminDarkModeStyle();
