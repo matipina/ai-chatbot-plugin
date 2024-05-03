@@ -1105,8 +1105,8 @@ function display_ai_chatbot_settings_form()
 
 function exclude_files_from_wp_rocket($excluded_files)
 {
-    $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/ai-chatbot.js';
-    $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/ai-chatbot-style.css';
+    $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/assets/js/ai-chatbot.js';
+    $excluded_files[] = '/wp-content/plugins/ai-chatbot-plugin/assets/css/ai-chatbot-style.css';
     return $excluded_files;
 }
 
@@ -1135,6 +1135,7 @@ add_action('admin_enqueue_scripts', 'myplugin_enqueue_bootstrap');
 add_action('wp_ajax_fetch_conversations', 'fetch_conversations');
 add_action('wp_ajax_nopriv_fetch_conversations', 'fetch_conversations');
 add_action('admin_enqueue_scripts', 'display_emotions_chart');
+
 
 add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');

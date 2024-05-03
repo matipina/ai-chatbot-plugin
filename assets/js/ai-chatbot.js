@@ -17,6 +17,8 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response && response.success) {
+                    console.log('Success');
+                    console.log(response.data.sessionId);
                     localStorage.setItem('aiChatbotSessionId', response.data.sessionId);
                     displayDefaultMessage();
                 } else {
