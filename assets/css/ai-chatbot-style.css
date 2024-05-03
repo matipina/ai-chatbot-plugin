@@ -228,7 +228,7 @@
     border-radius: 50%;
     display: inline-block;
     margin-right: 10px;
-    background-image: url('assets/BotFace.png');
+    background-image: url('../img/BotFace.png');
     background-size: cover; /* Ensures the image covers the entire area */
     background-position: center; /* Centers the image */
 }
@@ -276,7 +276,7 @@
     border-radius: 50%;
     padding: 0;
     overflow: hidden;
-    background-image: url('assets/BotFace.png'); /* Replace with your image path */
+    background-image: url('../img/BotFace.png');
     background-size: cover; /* Ensures the image covers the entire area */
     background-position: center; /* Centers the image */
 }
@@ -292,7 +292,7 @@
 .chatbot-minimized {
     width: 60px; /* Adjust the size as needed */
     height: 60px; /* Adjust the size as needed */
-    background-image: url('assets/BotFace.png');
+    background-image: url('../img/BotFace.png');
     background-size: cover; /* Ensures the image covers the entire area */
     background-position: 50% 50%; /* Centers the image */
     border-radius: 50%;

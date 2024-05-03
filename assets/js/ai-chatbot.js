@@ -10,14 +10,13 @@ jQuery(document).ready(function($) {
     // Trigger start chat session AJAX call
     function startChatSession() {
         $.ajax({
-            url: aiChatbotSettings.ajaxurl, // Ensure ajaxurl is defined in your PHP and passed to JS
+            url: aiChatbotSettings.ajaxurl,
             method: 'POST',
             data: {
-                action: 'start_chat_session', // This should match with your PHP AJAX action
+                action: 'start_chat_session', 
             },
             success: function(response) {
                 if (response && response.success) {
-                    console.log('Chat session started:', response.data.sessionId);
                     localStorage.setItem('aiChatbotSessionId', response.data.sessionId);
                     displayDefaultMessage();
                 } else {

@@ -11,19 +11,15 @@ if (!defined('ABSPATH')) {
 class AssetManager {
     public function register() {
         add_action('wp_enqueue_scripts', [$this, 'enqueuePublicAssets']);
-        add_action('admin_enqueue_scripts', [$this, 'enqueueAdminAssets']);
     }
 
     public function enqueuePublicAssets() {
         $this->enqueueFontAwesome();
         $this->enqueueBootstrap();
         $this->enqueueGoogleFonts();
-        $this->enqueueChatbotScripts();
-    }
-
-    public function enqueueAdminAssets() {
-        $this->enqueueAdminDarkModeStyle();
         $this->enqueueAdminChatbotStyles();
+        $this->enqueueChatbotScripts();
+        $this->enqueueAdminDarkModeStyle();
     }
 
     private function enqueueFontAwesome() {
@@ -31,17 +27,24 @@ class AssetManager {
     }
 
     private function enqueueAdminDarkModeStyle() {
-        wp_enqueue_style('myplugin-admin-dark-mode', plugins_url('admin-dark-mode.css', __FILE__));
+        wp_enqueue_style('myplugin-admin-dark-mode', plugins_url('../assets/css/admin-dark-mode.css', __FILE__));
     }
 
     private function enqueueAdminChatbotStyles() {
-        wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
+        wp_enqueue_style('ai-chatbot-css', plugins_url('../assets/css/ai-chatbot-style.css', __FILE__));
     }
 
     private function enqueueBootstrap() {
         wp_enqueue_style('bootstrap-css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css');
         wp_enqueue_script('bootstrap-js', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js', ['jquery'], null, true);
         wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
+
+        // Enqueue emotions-chart.js with Chart.js as a dependency
+        //wp_enqueue_script('emotions-chart-js', plugins_url('../assets/js/emotions-chart.js', __FILE__), array('chart-js'), '1.0.0', true);
+
+        // Assume get_last_7_days_emotion_data() fetches the required data
+        //$emotion_data = get_last_7_days_emotion_data();
+        //wp_localize_script('emotions-chart-js', 'aiChatbotEmotionData', $emotion_data);
     }
 
     private function enqueueGoogleFonts() {
@@ -49,8 +52,21 @@ class AssetManager {
     }
 
     private function enqueueChatbotScripts() {
-        wp_enqueue_script('ai-chatbot-js', plugins_url('/ai-chatbot.js', __FILE__), ['jquery'], '1.0.0', true);
-        wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
+        wp_enqueue_script('jquery');
+        wp_enqueue_script('ai-chatbot-js', plugins_url('../assets/js/ai-chatbot.js', __FILE__), ['jquery'], '1.0.0', true);
+
+        $chatbot_settings = array(
+            'ajaxurl' => admin_url('admin-ajax.php'), // AJAX URL for WordPress
+            'image_url' => get_option('ai_chatbot_image_url'),
+            'primary_color' => get_option('ai_chatbot_primary_color', '#007bff'), // Default blue color
+            'custom_bot_down_message' => get_option('custom_bot_down_message'), // Custom bot down message
+            'defaultMessage' => get_option('ai_chatbot_default_message', 'Hello! I\'m here to help you. What can I do for you today?'),
+        );
+        wp_localize_script('ai-chatbot-js', 'aiChatbotSettings', $chatbot_settings);
+        wp_add_inline_script('ai-chatbot-js', '
+             document.addEventListener("DOMContentLoaded", function() {
+             });
+         ', 'after');
     }
 }
 
