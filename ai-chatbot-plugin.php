@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: AI Chatbot Generator
+ * Plugin Name: Echos
  * Description: A WordPress plugin for generating custom AI Chatbots using Google Gemini API.
  * Version: 0.1.0
  * Author: Tiago Aragona & Matias Piña
@@ -507,7 +507,7 @@ function ai_chatbot_settings_page()
                 <!-- Nav tabs -->
                 <div class="ai-chatbot-header">
                     <div class="ai-chatbot-logo">
-                        <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/assets/img/echoslogo3@2x.png"
+                        <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin-main/assets/img/echoslogo3@2x.png"
                             alt="Echos Logo">
                     </div>
                     <!-- Nav tabs -->
