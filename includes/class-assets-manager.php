@@ -11,6 +11,8 @@ if (!defined('ABSPATH')) {
 class AssetManager {
     public function register() {
         add_action('wp_enqueue_scripts', [$this, 'enqueuePublicAssets']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueueAdminAssets'], 100);
+
     }
 
     public function enqueuePublicAssets() {
@@ -19,6 +21,10 @@ class AssetManager {
         $this->enqueueGoogleFonts();
         $this->enqueueAdminChatbotStyles();
         $this->enqueueChatbotScripts();
+        $this->enqueueAdminDarkModeStyle();
+    }
+
+    public function enqueueAdminAssets() {
         $this->enqueueAdminDarkModeStyle();
     }
 

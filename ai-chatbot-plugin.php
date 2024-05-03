@@ -37,11 +37,9 @@ function handle_start_chat_session()
     wp_send_json_success(array('sessionId' => session_id()));
 }
 
-
-
 function ai_chatbot_enqueue_admin_styles()
 {
-    wp_enqueue_style('ai-chatbot-css', plugins_url('assets/css/ai-chatbot-style.css', __FILE__));
+    wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
 }
 
 function myplugin_enqueue_bootstrap()
@@ -237,39 +235,6 @@ function insert_emotion_data($session_id, $message, $emotion)
         ),
         array('%s', '%s', '%s', '%s')
     );
-}
-
-function ai_chatbot_enqueue_scripts()
-{
-    wp_enqueue_script('jquery');
-    // Enqueue the AI Chatbot JavaScript file with jQuery as a dependency
-    wp_enqueue_script('ai-chatbot-js', plugins_url('/ai-chatbot.js', __FILE__), array('jquery'), '1.0.0', true);
-
-    // Enqueue the AI Chatbot CSS file
-    wp_enqueue_style('ai-chatbot-css', plugins_url('/ai-chatbot-style.css', __FILE__));
-
-    // Enqueue Font Awesome for chatbot toggle icon
-    wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
-
-    // Combine and pass settings to the JavaScript file
-
-
-    $chatbot_settings = array(
-        'ajaxurl' => admin_url('admin-ajax.php'), // AJAX URL for WordPress
-        'image_url' => get_option('ai_chatbot_image_url'), // Pass the image URL
-        'primary_color' => get_option('ai_chatbot_primary_color', '#007bff'), // Default blue color
-        'custom_bot_down_message' => get_option('custom_bot_down_message'), // Custom bot down message
-        'defaultMessage' => get_option('ai_chatbot_default_message', 'Hello! I\'m here to help you. What can I do for you today?'),
-    );
-
-
-    wp_localize_script('ai-chatbot-js', 'aiChatbotSettings', $chatbot_settings);
-
-    // Add a script to wait for DOMContentLoaded
-    wp_add_inline_script('ai-chatbot-js', '
-         document.addEventListener("DOMContentLoaded", function() {
-         });
-     ', 'after');
 }
 
 
@@ -567,7 +532,7 @@ function ai_chatbot_settings_page()
                 <!-- Nav tabs -->
                 <div class="ai-chatbot-header">
                     <div class="ai-chatbot-logo">
-                        <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/assets/echoslogo3@2x.png"
+                        <img src="/wordpress/wp-content/plugins/ai-chatbot-plugin/assets/img/echoslogo3@2x.png"
                             alt="Echos Logo">
                     </div>
                     <!-- Nav tabs -->
@@ -1157,31 +1122,22 @@ if (!isset($_SESSION['chat_history'])) {
 
 // For logged-in users
 add_action('wp_ajax_start_chat_session', 'handle_start_chat_session');
+
 // For not logged-in users
 add_action('wp_ajax_nopriv_start_chat_session', 'handle_start_chat_session');
-
 
 $assetManager = new AssetManager();
 $assetManager->register();
 
-
-add_action('admin_enqueue_scripts', 'ai_chatbot_enqueue_admin_styles');
 add_action('admin_enqueue_scripts', 'myplugin_enqueue_bootstrap');
-add_action('admin_enqueue_scripts', 'myplugin_enqueue_google_fonts');
 
 // AJAX handler to fetch conversations
 add_action('wp_ajax_fetch_conversations', 'fetch_conversations');
 add_action('wp_ajax_nopriv_fetch_conversations', 'fetch_conversations');
 add_action('admin_enqueue_scripts', 'display_emotions_chart');
 
-// Hook the ai_chatbot_enqueue_scripts function to the 'wp_enqueue_scripts' action
-add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
-
 add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
-
-// Hook the ai_chatbot_enqueue_scripts function to the 'wp_enqueue_scripts' action
-add_action('wp_enqueue_scripts', 'ai_chatbot_enqueue_scripts');
 
 add_action('wp_ajax_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
 add_action('wp_ajax_nopriv_ai_chatbot_handle_request', 'ai_chatbot_handle_request');
@@ -1195,7 +1151,6 @@ add_action('admin_init', 'ai_chatbot_settings_init');
 
 add_filter('rocket_exclude_js', 'exclude_files_from_wp_rocket');
 add_filter('rocket_exclude_css', 'exclude_files_from_wp_rocket');
-
 
 // Instantiate the AIChatbot class.
 //$ai_chatbot = new AIChatbot();
